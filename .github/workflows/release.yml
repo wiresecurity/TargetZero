@@ -1,0 +1,106 @@
+# SPDX-License-Identifier: Apache-2.0
+# Publishes a release when a GitHub release is published (tag vX.Y.Z):
+#   - PyPI through trusted publishing (no stored token), with build attestations
+#   - PowerShell Gallery with the PSGALLERY_API_KEY secret of the psgallery environment
+#     (skipped while that secret does not exist)
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Tag matches the version in the code
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="${TAG#v}"
+          python3 - "$version" <<'PY'
+          import re, sys
+          version = sys.argv[1]
+          found = {
+              "pyproject.toml": re.search(r'^version = "([^"]+)"', open("pyproject.toml").read(), re.M),
+              "python/targetzero/__init__.py": re.search(r'__version__ = "([^"]+)"', open("python/targetzero/__init__.py").read()),
+              "TargetZero.psd1": re.search(r"ModuleVersion\s*=\s*'([^']+)'", open("powershell/TargetZero/TargetZero.psd1").read()),
+              "TargetZero.psm1": re.search(r"ModuleVersion = '([^']+)'", open("powershell/TargetZero/TargetZero.psm1").read()),
+          }
+          wrong = {f: (m.group(1) if m else None) for f, m in found.items() if not m or m.group(1) != version}
+          if wrong:
+              sys.exit(f"Tag v{version} does not match: {wrong}")
+          print(f"All versions are {version}")
+          PY
+
+  pypi-build:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Build
+        run: |
+          pip install build twine
+          python -m build
+          twine check dist/*
+      - name: Install and run the built wheel
+        run: |
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install dist/*.whl
+          cd "$(mktemp -d)"
+          /tmp/smoke/bin/python -m targetzero init
+          /tmp/smoke/bin/python -m targetzero scorecard
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+
+  pypi-publish:
+    needs: pypi-build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/targetzero/
+    permissions:
+      id-token: write # trusted publishing; no token is stored anywhere
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+
+  psgallery:
+    needs: check
+    runs-on: ubuntu-latest
+    environment:
+      name: psgallery
+      url: https://www.powershellgallery.com/packages/TargetZero
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Publish
+        run: |
+          if (-not $env:PSGALLERY_API_KEY) {
+            Write-Output 'No PSGALLERY_API_KEY in the psgallery environment: PowerShell Gallery skipped.'
+            exit 0
+          }
+          # Isolated module folder, as in CI (pre-installed runner modules crash Test-ModuleManifest).
+          $folder = Join-Path $env:RUNNER_TEMP 'psmodules'
+          $null = New-Item -ItemType Directory -Path $folder -Force
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Save-Module powershell-yaml -RequiredVersion 0.4.12 -Path $folder -Repository PSGallery
+          $env:PSModulePath = "$folder$([IO.Path]::PathSeparator)$(Join-Path $PSHOME 'Modules')"
+          ./powershell/build.ps1
+          Publish-Module -Path ./powershell/TargetZero -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
