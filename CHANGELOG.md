@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - The PowerShell module is on the PowerShell Gallery (0.3.2): the docs install it with `Install-Module TargetZero` instead of the release zip.
 - Step-by-step guide: Mac notes (Apple's Python 3.9, pipx) and matching troubleshooting rows.
 
+### Fixed
+- CI: the module manifest is checked with `Test-ModuleManifest` instead of PSScriptAnalyzer, whose manifest rule crashed intermittently on Windows.
+
 ## [0.3.2] - 2026-11-19
 
 First release on PyPI. Same content as 0.3.1.
