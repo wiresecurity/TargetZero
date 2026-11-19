@@ -10,7 +10,7 @@ Python 3.11 or later:
 pip install targetzero
 ```
 
-Until the package is published on PyPI, install from a clone: `pip install -e .` in the repository folder.
+Add `[gws]` for Google Workspace (`pip install "targetzero[gws]"`). To work on TargetZero itself, install from a clone with `pip install -e .` instead.
 
 For the Microsoft 365 scripts (from release 0.2), PowerShell 7.4 or later:
 

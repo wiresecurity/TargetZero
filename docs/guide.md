@@ -100,7 +100,7 @@ These are the most important part of this guide.
 
 ## 4. Install the software (once)
 
-You install three things: Python, PowerShell 7 (only needed for Microsoft 365) and TargetZero itself.
+You install Python and TargetZero. For Microsoft 365 you also install PowerShell 7 and the TargetZero module for it.
 
 ### 4.1 Open a terminal
 
@@ -157,38 +157,23 @@ Answer **Y** (yes) if it asks whether you trust the repository *PSGallery*.
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
-### 4.4 Download TargetZero
+### 4.4 Install TargetZero
 
-1. Go to <https://github.com/wiresecurity/TargetZero>. (While the project is not yet public, you need to be given access to see it.)
-2. Click the green **Code** button, then **Download ZIP**.
-3. Unzip it to a permanent place, for example:
-   - Windows: `C:\Tools\TargetZero`
-   - Mac: a folder `Tools/TargetZero` in your home folder
-
-   Make sure the folder contains `README.md`, `python`, `powershell` and the other folders directly, not inside an extra sub-folder.
-4. **Windows only:** mark the downloaded files as trusted. In PowerShell 7:
-
-   ```powershell
-   Get-ChildItem C:\Tools\TargetZero -Recurse | Unblock-File
-   ```
-
-### 4.5 Install TargetZero
-
-In a terminal (not necessarily PowerShell 7):
+TargetZero is published on PyPI, the standard place for Python software: <https://pypi.org/project/targetzero/>. In a terminal (not necessarily PowerShell 7):
 
 - Windows:
 
   ```
-  py -m pip install "C:\Tools\TargetZero[gws]"
+  py -m pip install "targetzero[gws]"
   ```
 
 - Mac:
 
   ```
-  python3 -m pip install "$HOME/Tools/TargetZero[gws]"
+  python3 -m pip install "targetzero[gws]"
   ```
 
-`[gws]` adds Google Workspace support. Leave it out if you do not use Google Workspace. If you have VMware vSphere, use `[gws,vsphere]`.
+`[gws]` adds Google Workspace support. Leave it out if you do not use Google Workspace (`py -m pip install targetzero`). If you have VMware vSphere, use `"targetzero[gws,vsphere]"`.
 
 Check it works:
 
@@ -196,7 +181,32 @@ Check it works:
 py -m targetzero --version
 ```
 
-You should see `targetzero 0.3.0` or newer.
+You should see `targetzero 0.3.2` or newer.
+
+**Updating later.** New versions fix problems and add checks. To update, run the same install command with `--upgrade`:
+
+```
+py -m pip install --upgrade "targetzero[gws]"
+```
+
+### 4.5 Download the Microsoft 365 module (Microsoft 365 only)
+
+The Microsoft 365 part is a PowerShell module. Until it is published on the PowerShell Gallery, you download it from GitHub:
+
+1. Go to the latest release: <https://github.com/wiresecurity/TargetZero/releases/latest>.
+2. Under **Assets**, click **Source code (zip)**.
+3. Unzip it to a permanent place, for example:
+   - Windows: `C:\Tools\TargetZero`
+   - Mac: a folder `Tools/TargetZero` in your home folder
+
+   Make sure that folder contains `README.md`, `powershell` and the other folders directly, not inside an extra sub-folder. If the zip created a sub-folder such as `TargetZero-0.3.2`, move its contents up one level.
+4. **Windows only:** mark the downloaded files as trusted. In PowerShell 7:
+
+   ```powershell
+   Get-ChildItem C:\Tools\TargetZero -Recurse | Unblock-File
+   ```
+
+To update the module later, download the new release and replace the folder's contents. Use the same version as your Python package (`py -m targetzero --version`).
 
 > In this guide all Python commands start with `py -m targetzero` (Mac: `python3 -m targetzero`). That always works, even when the shorter `targetzero` command is not found.
 
@@ -643,11 +653,12 @@ Targets 3 and 7 are partly manual: keep `registers\alert_tests.csv` (the monthly
 | `No configuration found` | You are not in your working folder. `cd` to it first (section 5). |
 | `... is invalid:` followed by a line | A mistake in `targetzero.yaml`. The message names the setting. Check spaces and quotes (section 6). |
 | `Security Defaults is on` | See the warning in 9.4. Do not switch Security Defaults off on your own. |
-| `running scripts is disabled on this system` | Windows only: run the two Windows-only commands in 4.3 and 4.4. |
+| `running scripts is disabled on this system` | Windows only: run the two Windows-only commands in 4.3 and 4.5. |
 | `The term 'Invoke-T0M365AdminInventory' is not recognized` | Run `Import-Module C:\Tools\TargetZero\powershell\TargetZero` first (in PowerShell **7**). |
 | `Need admin approval` in the browser | A Global Administrator must sign in once and approve the permissions (7.1). |
 | `Insufficient privileges` / `Forbidden` / HTTP 403 | Your account lacks the role from section 2. |
-| `Google Workspace support is not installed` | Install again with `[gws]` (4.5). |
+| `Google Workspace support is not installed` | Install again with `[gws]` (4.4). |
+| `No module named targetzero` | TargetZero is not installed for this Python. Run the install command in 4.4 again. |
 | A count shows `(incomplete)` | Read the `note:` lines under it. Often a site did not answer, or a licence or permission is missing. |
 | `crt.sh failed … 502` | A public website TargetZero uses was busy. Try again later. |
 | `validate` reports problems in a register | Usually a date in the wrong format (must be `2026-11-19`) or a value that is not allowed (e.g. `yes` instead of `Y`). |

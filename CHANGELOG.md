@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Changed
+- The step-by-step guide, README and quickstart install TargetZero from PyPI (`pip install targetzero`).
+
 ## [0.3.2] - 2026-11-19
 
 First release on PyPI. Same content as 0.3.1.

@@ -39,7 +39,7 @@ TargetZero counts each one from live data, helps you fix what it finds on Micros
 Requirements: Python 3.11+ and, for the Microsoft scripts, PowerShell 7.4+.
 
 ```bash
-pip install -e .                  # from a clone; "pip install targetzero" once published
+pip install targetzero            # add [gws] for Google Workspace: pip install "targetzero[gws]"
 mkdir my-target0 && cd my-target0
 targetzero init                   # creates targetzero.yaml and registers/
 # edit targetzero.yaml: organisation, owners, break-glass accounts, scope
