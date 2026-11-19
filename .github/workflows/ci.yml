@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,6 +14,7 @@ jobs:
   python:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
@@ -20,7 +22,7 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -e '.[dev]'
+      - run: pip install -e '.[dev,gws,vsphere]'
       - run: ruff check .
       - run: ruff format --check python
       - run: mypy
@@ -34,6 +36,7 @@ jobs:
   powershell:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     defaults:
@@ -48,9 +51,17 @@ jobs:
           Install-Module PSScriptAnalyzer, powershell-yaml -Scope CurrentUser
       - name: PSScriptAnalyzer
         run: |
-          $results = Invoke-ScriptAnalyzer -Path powershell -Recurse -Settings powershell/PSScriptAnalyzerSettings.psd1
+          # One file at a time, so a crash in the analyzer names the file.
+          $results = foreach ($file in Get-ChildItem powershell -Recurse -Include *.ps1, *.psm1, *.psd1) {
+            try {
+              Invoke-ScriptAnalyzer -Path $file.FullName -Settings powershell/PSScriptAnalyzerSettings.psd1 -ErrorAction Stop
+            }
+            catch {
+              throw "PSScriptAnalyzer failed on $($file.FullName): $($_.Exception.ToString())"
+            }
+          }
           $results | Format-Table -AutoSize
-          if ($results) { throw "PSScriptAnalyzer found $($results.Count) issue(s)" }
+          if ($results) { throw "PSScriptAnalyzer found $(@($results).Count) issue(s)" }
       - name: Pester
         run: |
           $config = New-PesterConfiguration
