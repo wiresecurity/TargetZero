@@ -5,9 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-19
+
+First release on PyPI. Same content as 0.3.1.
+
+### Changed
+- The release workflow uploads to PyPI with an API token: PyPI trusted publishing did not accept the OIDC subject format of this repository.
+
 ## [0.3.1] - 2026-11-19
 
-First release on PyPI.
+Not published: the PyPI upload was refused (trusted publishing).
 
 ### Added
 - Release workflow: publishes to PyPI (trusted publishing, with build attestations) and the PowerShell Gallery when a GitHub release is published.
