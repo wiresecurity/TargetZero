@@ -46,14 +46,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install modules
         run: |
+          # Save pinned versions into a fresh folder and use only that plus the built-in modules.
+          # Modules pre-installed on some runner images crash Test-ModuleManifest while it scans
+          # module paths ("Value cannot be null. (Parameter 'name')").
+          $folder = Join-Path $env:RUNNER_TEMP 'psmodules'
+          $null = New-Item -ItemType Directory -Path $folder -Force
           Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module Pester -MinimumVersion 5.5.0 -Scope CurrentUser
-          Install-Module PSScriptAnalyzer, powershell-yaml -Scope CurrentUser
-          # Use only the modules installed here plus the built-in ones. A module that comes
-          # pre-installed on some runner images crashes Test-ModuleManifest while it scans
-          # every module path ("Value cannot be null. (Parameter 'name')").
-          $userModules = Split-Path (Split-Path (Get-Module -ListAvailable powershell-yaml | Select-Object -First 1).ModuleBase)
-          "PSModulePath=$userModules$([IO.Path]::PathSeparator)$(Join-Path $PSHOME 'Modules')" >> $env:GITHUB_ENV
+          Save-Module Pester -RequiredVersion 6.2.0 -Path $folder -Repository PSGallery
+          Save-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Path $folder -Repository PSGallery
+          Save-Module powershell-yaml -RequiredVersion 0.4.12 -Path $folder -Repository PSGallery
+          "PSModulePath=$folder$([IO.Path]::PathSeparator)$(Join-Path $PSHOME 'Modules')" >> $env:GITHUB_ENV
       - name: PSScriptAnalyzer
         run: |
           # One file at a time, so a crash in the analyzer names the file.
