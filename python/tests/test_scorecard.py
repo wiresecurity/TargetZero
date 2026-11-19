@@ -11,15 +11,32 @@ from targetzero.scorecard import scorecard
 
 DAY1 = date(2026, 11, 19)
 DAY8 = date(2026, 11, 26)
-EXC_FIELDS = ["id", "zero", "items", "description", "compensating_control",
-              "accepted_by", "signed_date", "expiry_date", "notes"]
+EXC_FIELDS = [
+    "id",
+    "zero",
+    "items",
+    "description",
+    "compensating_control",
+    "accepted_by",
+    "signed_date",
+    "expiry_date",
+    "notes",
+]
 
 
-def summary(config: Config, run: date, zero: int, source: str, ids: list[str],
-            complete: bool = True) -> None:
-    write_summary(run_dir(config.output_dir, run), zero=zero, source=source, name="check",
-                  tool="test", run_date=run, complete=complete,
-                  items=[{"id": i, "reason": "r"} for i in ids])
+def summary(
+    config: Config, run: date, zero: int, source: str, ids: list[str], complete: bool = True
+) -> None:
+    write_summary(
+        run_dir(config.output_dir, run),
+        zero=zero,
+        source=source,
+        name="check",
+        tool="test",
+        run_date=run,
+        complete=complete,
+        items=[{"id": i, "reason": "r"} for i in ids],
+    )
 
 
 def by_zero(card: scorecard.Scorecard) -> dict[int, scorecard.Row]:
@@ -50,14 +67,34 @@ def test_incomplete_summary_flags_target(config: Config) -> None:
 
 def test_valid_exception_moves_items_out_of_today(config: Config) -> None:
     summary(config, DAY1, 4, "external", ["external:1.2.3.4/tcp-3389", "external:1.2.3.4/tcp-22"])
-    write_csv(config.registers_dir / "exceptions.csv", [
-        {"id": "EXC-1", "zero": "4", "items": "external:1.2.3.4/tcp-3389", "description": "d",
-         "compensating_control": "c", "accepted_by": "CEO", "signed_date": "2026-11-19",
-         "expiry_date": "2027-01-31", "notes": ""},
-        {"id": "EXC-2", "zero": "4", "items": "external:1.2.3.4/tcp-22", "description": "d",
-         "compensating_control": "c", "accepted_by": "", "signed_date": "2026-11-19",
-         "expiry_date": "2027-01-31", "notes": ""},
-    ], EXC_FIELDS)
+    write_csv(
+        config.registers_dir / "exceptions.csv",
+        [
+            {
+                "id": "EXC-1",
+                "zero": "4",
+                "items": "external:1.2.3.4/tcp-3389",
+                "description": "d",
+                "compensating_control": "c",
+                "accepted_by": "CEO",
+                "signed_date": "2026-11-19",
+                "expiry_date": "2027-01-31",
+                "notes": "",
+            },
+            {
+                "id": "EXC-2",
+                "zero": "4",
+                "items": "external:1.2.3.4/tcp-22",
+                "description": "d",
+                "compensating_control": "c",
+                "accepted_by": "",
+                "signed_date": "2026-11-19",
+                "expiry_date": "2027-01-31",
+                "notes": "",
+            },
+        ],
+        EXC_FIELDS,
+    )
     card = scorecard.build(config, DAY1)
     row = by_zero(card)[4]
     assert (row.today, row.excepted_items, row.open_exceptions) == (1, 1, 1)

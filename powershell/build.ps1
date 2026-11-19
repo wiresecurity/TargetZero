@@ -10,5 +10,8 @@ $module = Join-Path $PSScriptRoot 'TargetZero'
 $target = Join-Path $module 'schemas'
 $null = New-Item -ItemType Directory -Path $target -Force
 Copy-Item -Path (Join-Path $PSScriptRoot '..' 'schema' '*.schema.json') -Destination $target -Force
+$config = Join-Path $module 'config'
+$null = New-Item -ItemType Directory -Path $config -Force
+Copy-Item -Path (Join-Path $PSScriptRoot '..' 'config' 'privileged_roles.yaml') -Destination $config -Force
 Copy-Item -Path (Join-Path $PSScriptRoot '..' 'LICENSE'), (Join-Path $PSScriptRoot '..' 'NOTICE') -Destination $module -Force
 Test-ModuleManifest -Path (Join-Path $module 'TargetZero.psd1') | Select-Object Name, Version

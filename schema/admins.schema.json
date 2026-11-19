@@ -12,6 +12,7 @@
     "system": { "type": "string", "minLength": 1, "description": "Tenant, domain, device or console name." },
     "account": { "type": "string", "minLength": 1 },
     "role": { "type": "string", "minLength": 1 },
+    "account_type": { "enum": ["user", "service", "shared", ""], "description": "service = app, service principal or non-interactive account. Service accounts count for Zero 1 but not for Zero 2." },
     "privileged": { "enum": ["Y", "N"], "description": "Y when the role counts as full admin." },
     "permanent": { "enum": ["Y", "N"], "description": "Y when the role is active with no end date." },
     "end_date": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$" },

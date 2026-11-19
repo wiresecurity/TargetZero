@@ -61,11 +61,27 @@ All seven targets show **no data** until the first checks have run. That is on p
 
 ## 4. Run the checks
 
-From release 0.2 the inventory scripts write their results to `output/<today>/`. Until then you can fill the registers by hand and check them:
+A typical Day 1, from the working folder:
+
+```powershell
+# Microsoft 365 (PowerShell 7.4+)
+$config = Import-T0Config
+Connect-T0M365 -Config $config
+Invoke-T0M365AdminInventory -Config $config
+Get-T0M365Domain -Config $config
+```
 
 ```bash
-targetzero validate registers/*.csv
+targetzero gws admins && targetzero gws domains          # Google Workspace
+targetzero vendors fortigate backups/*.conf              # firewall config exports
+targetzero registers manual-admins                       # everything without a collector
+targetzero external discover                             # names and addresses -> inventory
+targetzero external scan --authorised                    # from OUTSIDE your network
+targetzero external kev                                  # known exploited vulnerabilities
+targetzero scorecard
 ```
+
+Each script writes to `output/<today>/` and prints its count. Details: [Microsoft 365](setup-m365.md), [Google Workspace](setup-gws.md), [external checks](external.md), [vendor collectors](vendors.md). Check hand-filled registers with `targetzero validate registers/*.csv`.
 
 ## 5. Record exceptions
 

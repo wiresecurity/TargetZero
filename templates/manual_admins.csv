@@ -1,1 +1,1 @@
-id,source,system,account,role,privileged,permanent,end_date,mfa_class,mfa_enforced,separate_admin_account,break_glass,last_logon,last_verified,notes
+id,source,system,account,role,account_type,privileged,permanent,end_date,mfa_class,mfa_enforced,separate_admin_account,break_glass,last_logon,last_verified,notes

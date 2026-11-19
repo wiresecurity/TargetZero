@@ -11,7 +11,10 @@ function Test-T0Json {
         [Parameter(Mandatory)][string]$Schema
     )
     $schemaErrors = @()
-    $null = Test-Json -Json $Json -SchemaFile (Get-T0SchemaPath -Name $Schema) `
+    $valid = Test-Json -Json $Json -SchemaFile (Get-T0SchemaPath -Name $Schema) `
         -ErrorAction SilentlyContinue -ErrorVariable schemaErrors
-    return @($schemaErrors | ForEach-Object { $_.Exception.Message })
+    $messages = @($schemaErrors | ForEach-Object { $_.Exception.Message })
+    # Some failures (e.g. a pattern mismatch) only show in the return value, not as an error record.
+    if (-not $valid -and -not $messages) { $messages = @("does not match $Schema.schema.json") }
+    return $messages
 }

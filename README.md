@@ -14,7 +14,7 @@ Tooling for **Target 0**: seven security counts, each brought to zero within 15 
 
 TargetZero counts each one from live data, helps you fix what it finds on Microsoft 365 and Google Workspace, and fills in the scorecard. It is built for small IT teams: no SIEM, no extra licences, CSV and JSON output.
 
-> **Status: 0.1 (foundation).** This release has the configuration, output formats, registers and scorecard. Inventory and change scripts for M365, Google Workspace, external exposure and vendor devices follow in 0.2 to 0.4. See [CHANGELOG.md](CHANGELOG.md).
+> **Status: 0.2 (baseline).** Everything needed for the Day 1 numbers: admin and MFA inventories for Microsoft 365 and Google Workspace, FortiGate and PAN-OS config collectors, the external exposure scan, asset discovery and the known-exploited-vulnerability check. Change scripts follow in 0.3. See [CHANGELOG.md](CHANGELOG.md).
 
 ## How it works
 
@@ -46,15 +46,20 @@ targetzero scorecard              # builds the scorecard from today's results
 
 See [docs/quickstart.md](docs/quickstart.md) for the full walk-through.
 
-## Commands (0.1)
+## What it checks (0.2)
 
-| Command | What it does |
-| --- | --- |
-| `targetzero init [dir]` | Creates `targetzero.yaml`, `privileged_roles.yaml` and empty registers. Never overwrites existing files. |
-| `targetzero scorecard [--date YYYY-MM-DD]` | Combines the summaries of a run date, applies valid exceptions, keeps the Day 1 baseline and history. |
-| `targetzero validate FILE...` | Checks summaries and register CSVs against the schemas. |
+| Zero | Microsoft 365 (PowerShell) | Google Workspace (Python) | Devices and internet (Python) |
+| --- | --- | --- | --- |
+| 1, 2 | `Invoke-T0M365AdminInventory` | `targetzero gws admins` | `targetzero vendors fortigate\|panos FILE...`, `targetzero registers manual-admins` |
+| 3 | | | `registers/alert_tests.csv` (by hand) |
+| 4 | | | `targetzero external scan --authorised`, vendor collectors |
+| 5 | `Get-T0M365Domain` | `targetzero gws domains` | `targetzero external discover`, `targetzero registers inventory` |
+| 6 | | | `targetzero external kev`, `targetzero registers findings` |
+| 7 | | | `registers/recovery/` (by hand) |
 
-PowerShell: `Import-Module ./powershell/TargetZero` gives `Import-T0Config`, `Get-T0RunDirectory`, `Export-T0Record` and `Export-T0Summary`.
+Then `targetzero scorecard` combines everything. Setup per platform: [Microsoft 365](docs/setup-m365.md), [Google Workspace](docs/setup-gws.md), [external checks](docs/external.md), [vendor collectors](docs/vendors.md).
+
+Other commands: `targetzero init` (set up a working folder), `targetzero validate FILE...` (check summaries and registers against the schemas).
 
 ## The Target 0 document
 

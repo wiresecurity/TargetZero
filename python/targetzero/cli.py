@@ -90,6 +90,90 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
+def _print_paths(paths: list[Path]) -> int:
+    for path in paths:
+        print(f"written  {path}")
+    for path in paths:
+        if path.name.endswith(".summary.json"):
+            data = json.loads(path.read_text(encoding="utf-8"))
+            state = "" if data["complete"] else "  (incomplete)"
+            print(f"Zero {data['zero']} {data['source']}/{data['name']}: {data['count']}{state}")
+            for note in data.get("notes", []):
+                print(f"  note: {note}")
+    return 0
+
+
+def cmd_registers(args: argparse.Namespace) -> int:
+    from targetzero.registers import findings, inventory, manual_admins
+
+    config = load_config(args.config)
+    runners = {
+        "manual-admins": manual_admins.run,
+        "inventory": inventory.count,
+        "findings": findings.count,
+    }
+    return _print_paths(runners[args.register](config, args.date))
+
+
+def cmd_external(args: argparse.Namespace) -> int:
+    from targetzero.external import discover, kev, scan
+
+    config = load_config(args.config)
+    if args.check == "scan":
+        if not args.authorised:
+            print(
+                "error: confirm with --authorised that you own or may scan every address in "
+                "scope.ip_ranges. Run it from outside your own network.",
+                file=sys.stderr,
+            )
+            return 2
+        paths = scan.run(
+            config,
+            args.date,
+            use_nmap=not args.no_nmap,
+            use_internetdb=args.internetdb,
+            max_hosts=args.max_hosts,
+            timeout=args.timeout,
+        )
+    elif args.check == "discover":
+        zones = []
+        for spec in args.zone_file:
+            file, _, origin = spec.partition(":")
+            zones.append((Path(file), origin or None))
+        paths = discover.run(config, args.date, use_crtsh=not args.no_crtsh, zone_files=zones)
+    else:
+        paths = kev.run(config, args.date, use_nvd=not args.no_nvd, recent_days=args.recent_days)
+    return _print_paths(paths)
+
+
+def cmd_gws(args: argparse.Namespace) -> int:
+    from targetzero.gws import admins, client, domains
+
+    config = load_config(args.config)
+    gws = client.connect(config)
+    if args.check == "admins":
+        return _print_paths(admins.run(config, args.date, gws, days=args.days))
+    return _print_paths(domains.run(config, args.date, gws))
+
+
+def cmd_vendors(args: argparse.Namespace) -> int:
+    from targetzero.vendors import common, fortigate, panos
+
+    collectors = {"fortigate": fortigate.collect, "panos": panos.collect}
+    config = load_config(args.config)
+    break_glass = set(config.break_glass(args.vendor))
+    devices = [collectors[args.vendor](Path(f), break_glass) for f in args.files]
+    return _print_paths(
+        common.write_outputs(
+            config,
+            args.date,
+            args.vendor,
+            devices,
+            tool=f"targetzero vendors {args.vendor}",
+        )
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="targetzero", description=__doc__)
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -103,6 +187,72 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--config", help="path to targetzero.yaml")
     p.add_argument("--date", type=_date, default=date.today(), help="run date (default: today)")
     p.set_defaults(func=cmd_scorecard)
+
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--config", help="path to targetzero.yaml")
+    common.add_argument(
+        "--date", type=_date, default=date.today(), help="run date (default: today)"
+    )
+
+    p = sub.add_parser("registers", help="count the hand-maintained registers")
+    p.add_argument("register", choices=["manual-admins", "inventory", "findings"])
+    p.add_argument("--config", help="path to targetzero.yaml")
+    p.add_argument("--date", type=_date, default=date.today(), help="run date (default: today)")
+    p.set_defaults(func=cmd_registers)
+
+    ext = sub.add_parser("external", help="checks from outside: scan, discover, kev")
+    ext_sub = ext.add_subparsers(dest="check", required=True)
+    p = ext_sub.add_parser("scan", parents=[common], help="open ports vs approved list (Zero 4)")
+    p.add_argument(
+        "--authorised",
+        action="store_true",
+        help="confirm you own or may scan every address in scope",
+    )
+    p.add_argument("--no-nmap", action="store_true", help="use the built-in scanner")
+    p.add_argument(
+        "--internetdb", action="store_true", help="also ask Shodan InternetDB (free, no key)"
+    )
+    p.add_argument("--max-hosts", type=int, default=1024)
+    p.add_argument("--timeout", type=float, default=1.5, help="seconds per port (built-in)")
+    p = ext_sub.add_parser(
+        "discover", parents=[common], help="find names and addresses, update the inventory (Zero 5)"
+    )
+    p.add_argument("--no-crtsh", action="store_true", help="skip certificate transparency")
+    p.add_argument(
+        "--zone-file",
+        action="append",
+        default=[],
+        metavar="FILE[:ORIGIN]",
+        help="DNS zone file export; repeat for more zones",
+    )
+    p = ext_sub.add_parser(
+        "kev", parents=[common], help="match CISA KEV against the inventory (Zero 6)"
+    )
+    p.add_argument("--no-nvd", action="store_true", help="skip NVD version checks")
+    p.add_argument(
+        "--recent-days",
+        type=int,
+        default=30,
+        help="without a version, report KEV entries this recent (default 30)",
+    )
+    ext.set_defaults(func=cmd_external)
+
+    g = sub.add_parser("gws", help="Google Workspace checks")
+    g_sub = g.add_subparsers(dest="check", required=True)
+    p = g_sub.add_parser("admins", parents=[common], help="admins and MFA (Zero 1, 2)")
+    p.add_argument("--days", type=int, default=30, help="sign-in history to read (default 30)")
+    g_sub.add_parser("domains", parents=[common], help="domains, for discovery (Zero 5)")
+    g.set_defaults(func=cmd_gws)
+
+    v = sub.add_parser("vendors", help="firewall and VPN collectors (offline config files)")
+    v_sub = v.add_subparsers(dest="vendor", required=True)
+    for name, label in (
+        ("fortigate", "FortiGate .conf backups"),
+        ("panos", "PAN-OS running-config.xml files"),
+    ):
+        p = v_sub.add_parser(name, parents=[common], help=label)
+        p.add_argument("files", nargs="+", help="all devices of this vendor, in one run")
+    v.set_defaults(func=cmd_vendors)
 
     p = sub.add_parser("validate", help="check summaries or register CSVs against the schemas")
     p.add_argument("files", nargs="+")

@@ -60,8 +60,7 @@ def find_config(explicit: str | os.PathLike[str] | None = None) -> Path:
         if candidate.exists():
             return candidate
     raise ConfigError(
-        "No configuration found. Run 'targetzero init', pass --config, "
-        f"or set {ENV_VAR}."
+        f"No configuration found. Run 'targetzero init', pass --config, or set {ENV_VAR}."
     )
 
 

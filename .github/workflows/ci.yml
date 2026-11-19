@@ -22,6 +22,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e '.[dev]'
       - run: ruff check .
+      - run: ruff format --check python
       - run: mypy
       - run: pytest -q
       - name: Wheel contains schemas and templates

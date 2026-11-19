@@ -1,0 +1,16 @@
+{
+  "description": "Shared cases for the Zero 1 / Zero 2 admin counting rules. Used by python/tests/test_admins.py and powershell/Tests/M365.Tests.ps1 so both implementations stay identical.",
+  "records": [
+    {"source": "m365", "system": "contoso", "account": "perm@x.com", "role": "Global Administrator", "account_type": "user", "privileged": "Y", "permanent": "Y", "mfa_class": "phishing-resistant", "mfa_enforced": "Y", "break_glass": "N"},
+    {"source": "m365", "system": "contoso", "account": "PERM@x.com", "role": "Exchange Administrator", "account_type": "user", "privileged": "Y", "permanent": "Y", "mfa_class": "phishing-resistant", "mfa_enforced": "Y", "break_glass": "N"},
+    {"source": "m365", "system": "contoso", "account": "eligible@x.com", "role": "Global Administrator", "account_type": "user", "privileged": "Y", "permanent": "N", "mfa_class": "mfa", "mfa_enforced": "Y", "break_glass": "N"},
+    {"source": "m365", "system": "contoso", "account": "reader@x.com", "role": "Global Reader", "account_type": "user", "privileged": "N", "permanent": "Y", "mfa_class": "mfa", "mfa_enforced": "Y", "break_glass": "N"},
+    {"source": "m365", "system": "contoso", "account": "bg@x.com", "role": "Global Administrator", "account_type": "user", "privileged": "Y", "permanent": "Y", "mfa_class": "none", "mfa_enforced": "N", "break_glass": "Y"},
+    {"source": "m365", "system": "contoso", "account": "sms@x.com", "role": "User Administrator", "account_type": "user", "privileged": "Y", "permanent": "N", "mfa_class": "does-not-count", "mfa_enforced": "Y", "break_glass": "N"},
+    {"source": "m365", "system": "contoso", "account": "mixed@x.com", "role": "Helpdesk Administrator", "account_type": "user", "privileged": "N", "permanent": "Y", "mfa_class": "mfa", "mfa_enforced": "Y", "break_glass": "N"},
+    {"source": "m365", "system": "contoso", "account": "mixed@x.com", "role": "Exchange Administrator", "account_type": "user", "privileged": "Y", "permanent": "N", "mfa_class": "mfa", "mfa_enforced": "unknown", "break_glass": "N"},
+    {"source": "m365", "system": "contoso", "account": "Backup App (app)", "role": "Graph application permission Directory.ReadWrite.All", "account_type": "service", "privileged": "Y", "permanent": "Y", "mfa_class": "none", "mfa_enforced": "N", "break_glass": "N"}
+  ],
+  "expected_zero1": ["m365:contoso/backup-app-(app)", "m365:contoso/perm@x.com"],
+  "expected_zero2": ["m365:contoso/bg@x.com", "m365:contoso/mixed@x.com", "m365:contoso/sms@x.com"]
+}

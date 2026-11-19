@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<nmaprun scanner="nmap">
+  <host><status state="up"/><address addr="203.0.113.2" addrtype="ipv4"/>
+    <ports>
+      <port protocol="tcp" portid="443"><state state="open"/><service name="https"/></port>
+      <port protocol="tcp" portid="3389"><state state="open"/><service name="ms-wbt-server"/></port>
+      <port protocol="tcp" portid="22"><state state="closed"/></port>
+    </ports>
+  </host>
+</nmaprun>

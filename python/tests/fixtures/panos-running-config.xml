@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<config version="10.2.0" urldb="paloaltonetworks" detail-version="10.2.4">
+  <mgt-config>
+    <users>
+      <entry name="admin">
+        <phash>$5$examplehashonly</phash>
+        <permissions><role-based><superuser>yes</superuser></role-based></permissions>
+      </entry>
+      <entry name="jane">
+        <authentication-profile>MFA-Admins</authentication-profile>
+        <permissions><role-based><superuser>yes</superuser></role-based></permissions>
+      </entry>
+      <entry name="auditor">
+        <phash>$5$examplehashonly</phash>
+        <permissions><role-based><superreader>yes</superreader></role-based></permissions>
+      </entry>
+      <entry name="certadmin">
+        <client-certificate-only>yes</client-certificate-only>
+        <permissions><role-based><deviceadmin><member>localhost.localdomain</member></deviceadmin></role-based></permissions>
+      </entry>
+      <entry name="sso">
+        <authentication-profile>SAML-Entra</authentication-profile>
+        <permissions><role-based><superuser>yes</superuser></role-based></permissions>
+      </entry>
+    </users>
+  </mgt-config>
+  <shared>
+    <authentication-profile>
+      <entry name="MFA-Admins">
+        <method><radius><server-profile>RADIUS</server-profile></radius></method>
+        <multi-factor-auth><mfa-enable>yes</mfa-enable><factors><member>Duo</member></factors></multi-factor-auth>
+      </entry>
+      <entry name="SAML-Entra">
+        <method><saml-idp><server-profile>Entra</server-profile></saml-idp></method>
+      </entry>
+    </authentication-profile>
+  </shared>
+  <devices>
+    <entry name="localhost.localdomain">
+      <deviceconfig>
+        <system><hostname>PA-EDGE</hostname></system>
+      </deviceconfig>
+      <network>
+        <profiles>
+          <interface-management-profile>
+            <entry name="allow-mgmt"><https>yes</https><ssh>yes</ssh><ping>yes</ping></entry>
+            <entry name="ping-only"><ping>yes</ping></entry>
+          </interface-management-profile>
+        </profiles>
+        <interface>
+          <ethernet>
+            <entry name="ethernet1/1">
+              <layer3>
+                <ip><entry name="203.0.113.10/29"/></ip>
+                <interface-management-profile>allow-mgmt</interface-management-profile>
+              </layer3>
+            </entry>
+            <entry name="ethernet1/2">
+              <layer3>
+                <ip><entry name="10.0.0.1/24"/></ip>
+                <interface-management-profile>allow-mgmt</interface-management-profile>
+              </layer3>
+            </entry>
+            <entry name="ethernet1/3">
+              <layer3>
+                <interface-management-profile>ping-only</interface-management-profile>
+              </layer3>
+            </entry>
+          </ethernet>
+        </interface>
+      </network>
+      <vsys>
+        <entry name="vsys1">
+          <zone>
+            <entry name="untrust"><network><layer3><member>ethernet1/1</member><member>ethernet1/3</member></layer3></network></entry>
+            <entry name="trust"><network><layer3><member>ethernet1/2</member></layer3></network></entry>
+          </zone>
+        </entry>
+      </vsys>
+    </entry>
+  </devices>
+</config>

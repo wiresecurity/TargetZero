@@ -33,8 +33,15 @@ TARGETS = {
 }
 
 ROW_FIELDS = (
-    "zero", "target", "day_1", "today", "excepted_items",
-    "open_exceptions", "status", "owner", "sources",
+    "zero",
+    "target",
+    "day_1",
+    "today",
+    "excepted_items",
+    "open_exceptions",
+    "status",
+    "owner",
+    "sources",
 )
 HISTORY_FIELDS = ("run_date", "zero", "today", "excepted_items", "open_exceptions", "status")
 

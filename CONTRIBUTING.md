@@ -11,6 +11,7 @@ Thank you for helping. TargetZero is used by small IT teams on production tenant
   - default to a dry run (`-WhatIf` / `--dry-run`); apply only with `-Apply` / `--apply`;
   - write a before/after log and a rollback file;
   - never touch the break-glass accounts from the config.
+- **Same rules in both languages.** Admin counting exists in Python (`targetzero/admins.py`) and PowerShell (`Export-T0AdminSummary`). Change both, and add a case to `tests/shared/admin-count-cases.json`; both test suites read it.
 - **No alerting.** Alert policies, watchers and notifications are out of scope.
 - **No real data.** Fixtures must be synthetic or fully scrubbed: no tenant ids, real domains, public IPs (use `example.com` and `203.0.113.0/24`), names or keys.
 - Every source file starts with `# SPDX-License-Identifier: Apache-2.0`.

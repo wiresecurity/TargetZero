@@ -16,7 +16,12 @@ from targetzero.common.output import read_csv
 from targetzero.common.schema import validate
 
 REQUIRED = (
-    "description", "compensating_control", "accepted_by", "signed_date", "expiry_date", "items",
+    "description",
+    "compensating_control",
+    "accepted_by",
+    "signed_date",
+    "expiry_date",
+    "items",
 )
 
 

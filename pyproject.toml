@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "targetzero"
-version = "0.1.0"
+version = "0.2.0"
 description = "Tooling for the Target 0 campaign: count, fix and report seven security zeros."
 readme = "README.md"
 license = "Apache-2.0"
@@ -14,6 +14,8 @@ requires-python = ">=3.11"
 dependencies = [
     "PyYAML>=6.0",
     "jsonschema>=4.21",
+    "dnspython>=2.6",
+    "defusedxml>=0.7.1",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -23,12 +25,18 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+gws = [
+    "google-api-python-client>=2.130",
+    "google-auth>=2.30",
+    "google-auth-oauthlib>=1.2",
+]
 dev = [
     "pytest>=8",
     "ruff>=0.6",
     "mypy>=1.11",
     "types-PyYAML",
     "types-jsonschema",
+    "types-defusedxml",
 ]
 
 [project.scripts]
@@ -70,3 +78,7 @@ python_version = "3.11"
 strict = true
 mypy_path = "python"
 packages = ["targetzero"]
+
+[[tool.mypy.overrides]]
+module = ["googleapiclient.*", "google_auth_oauthlib.*"]
+ignore_missing_imports = true

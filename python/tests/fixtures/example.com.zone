@@ -1,0 +1,10 @@
+$ORIGIN example.com.
+$TTL 3600
+@       IN SOA  ns1.example.com. hostmaster.example.com. 2026111901 7200 3600 1209600 3600
+@       IN NS   ns1.example.com.
+@       IN A    203.0.113.10
+www     IN CNAME example.com.
+vpn     IN A    203.0.113.2
+mail    IN MX   10 mx.example.net.
+*       IN A    203.0.113.10
+old     IN CNAME example-legacy.azurewebsites.net.

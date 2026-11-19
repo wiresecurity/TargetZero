@@ -8,8 +8,9 @@ import pytest
 from targetzero.cli import main
 
 
-def test_init_then_scorecard(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                             capsys: pytest.CaptureFixture[str]) -> None:
+def test_init_then_scorecard(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(tmp_path)
     assert main(["init"]) == 0
     assert (tmp_path / "targetzero.yaml").exists()
@@ -26,8 +27,9 @@ def test_init_then_scorecard(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 def test_templates_validate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     main(["init"])
-    files = [str(p) for p in (tmp_path / "registers").glob("*.csv")
-             if p.stem != "approved_exposure"]
+    files = [
+        str(p) for p in (tmp_path / "registers").glob("*.csv") if p.stem != "approved_exposure"
+    ]
     assert main(["validate", *files]) == 0
 
 

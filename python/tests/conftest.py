@@ -24,3 +24,23 @@ def config(tmp_path: Path) -> Config:
     path = tmp_path / "targetzero.yaml"
     path.write_text(CONFIG, encoding="utf-8")
     return load_config(path)
+
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+SCOPED = """\
+organisation: Test Org
+break_glass:
+  fortigate: [bg-fw]
+  gws: [bg@example.com]
+scope:
+  domains: [example.com]
+  ip_ranges: [203.0.113.0/29]
+"""
+
+
+@pytest.fixture
+def scoped(tmp_path: Path) -> Config:
+    path = tmp_path / "targetzero.yaml"
+    path.write_text(SCOPED, encoding="utf-8")
+    return load_config(path)

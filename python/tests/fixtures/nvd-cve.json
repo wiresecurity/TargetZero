@@ -1,0 +1,4 @@
+{"vulnerabilities": [{"cve": {"id": "CVE-2099-0001", "configurations": [{"nodes": [{"cpeMatch": [
+  {"vulnerable": true, "criteria": "cpe:2.3:o:fortinet:fortios:*:*:*:*:*:*:*:*", "versionStartIncluding": "7.2.0", "versionEndExcluding": "7.2.7"},
+  {"vulnerable": true, "criteria": "cpe:2.3:o:fortinet:fortios:*:*:*:*:*:*:*:*", "versionStartIncluding": "7.4.0", "versionEndIncluding": "7.4.2"}
+]}]}]}}]}

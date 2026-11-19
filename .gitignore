@@ -29,6 +29,9 @@ build/
 
 # PowerShell / Pester
 /powershell/TargetZero/schemas/
+/powershell/TargetZero/config/
+/powershell/TargetZero/LICENSE
+/powershell/TargetZero/NOTICE
 testResults.xml
 coverage.xml
 

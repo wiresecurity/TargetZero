@@ -23,6 +23,24 @@ m365:
   - Partner Tier2 Support
   - Directory Synchronization Accounts
 
+# Microsoft Graph application permissions that give an app admin-level power.
+# Apps holding one of these are reported as hidden admins (account_type = service).
+m365_app_permissions:
+  - RoleManagement.ReadWrite.Directory
+  - AppRoleAssignment.ReadWrite.All
+  - Application.ReadWrite.All
+  - Directory.ReadWrite.All
+  - User.ReadWrite.All
+  - Group.ReadWrite.All
+  - UserAuthenticationMethod.ReadWrite.All
+  - Policy.ReadWrite.ConditionalAccess
+  - Domain.ReadWrite.All
+  - Mail.ReadWrite
+  - Mail.Send
+  - Files.ReadWrite.All
+  - Sites.FullControl.All
+  - Sites.ReadWrite.All
+
 gws:
   # Google Workspace system roles
   - Super Admin

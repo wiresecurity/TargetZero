@@ -10,10 +10,14 @@ RUN = date(2026, 11, 19)
 
 def row(**overrides: str) -> dict[str, str]:
     base = {
-        "id": "EXC-001", "zero": "4", "items": "external:203.0.113.5/tcp-3389",
+        "id": "EXC-001",
+        "zero": "4",
+        "items": "external:203.0.113.5/tcp-3389",
         "description": "Legacy app needs RDP until migration",
         "compensating_control": "Source IP allow-list",
-        "accepted_by": "J. Smith, CEO", "signed_date": "2026-11-18", "expiry_date": "2027-02-15",
+        "accepted_by": "J. Smith, CEO",
+        "signed_date": "2026-11-18",
+        "expiry_date": "2027-02-15",
         "notes": "",
     }
     return base | overrides
