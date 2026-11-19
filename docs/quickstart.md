@@ -12,12 +12,14 @@ pip install targetzero
 
 Add `[gws]` for Google Workspace (`pip install "targetzero[gws]"`). To work on TargetZero itself, install from a clone with `pip install -e .` instead.
 
-For the Microsoft 365 scripts (from release 0.2), PowerShell 7.4 or later:
+For the Microsoft 365 scripts, PowerShell 7.4 or later:
 
 ```powershell
-Install-Module powershell-yaml -Scope CurrentUser
-Import-Module ./powershell/TargetZero
+Install-Module TargetZero, Microsoft.Graph.Authentication -Scope CurrentUser
+Import-Module TargetZero
 ```
+
+To work on the module itself, use `Import-Module ./powershell/TargetZero` from a clone instead.
 
 ## 2. Create a working folder
 

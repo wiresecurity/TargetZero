@@ -111,7 +111,7 @@ A terminal is a window where you type commands. You will copy commands from this
 
 Tips:
 
-- In the commands below, folders like `C:\Tools\TargetZero` are examples. Replace them with your own.
+- In the commands below, folders like `C:\Target0\Acme` are examples. Replace them with your own.
 - Windows writes folders with `\`, a Mac with `/`. The examples use Windows style; on a Mac write `exports/fw-office.conf` instead of `exports\fw-office.conf`.
 
 ### 4.2 Install Python
@@ -125,6 +125,8 @@ Tips:
    - Mac: `python3 --version`
 
    You should see `Python 3.12.x` or similar.
+
+   **Mac: if it says `Python 3.9.x`**, your Mac is still using Apple's built-in Python, which is too old. Close the terminal and open a new one; the python.org installer only takes effect in new windows. If it still says 3.9, check that the installer finished, or use the full path, e.g. `/Library/Frameworks/Python.framework/Versions/3.13/bin/python3` instead of `python3`.
 
 In the rest of this guide, `py` is used for Windows. **On a Mac, type `python3` wherever the guide says `py`.**
 
@@ -143,10 +145,10 @@ $PSVersionTable.PSVersion
 
 It must say 7.4 or higher.
 
-Then install two helper modules. In PowerShell 7:
+Then install the Microsoft sign-in module. In PowerShell 7:
 
 ```powershell
-Install-Module Microsoft.Graph.Authentication, powershell-yaml -Scope CurrentUser
+Install-Module Microsoft.Graph.Authentication -Scope CurrentUser
 ```
 
 Answer **Y** (yes) if it asks whether you trust the repository *PSGallery*.
@@ -189,24 +191,37 @@ You should see `targetzero 0.3.2` or newer.
 py -m pip install --upgrade "targetzero[gws]"
 ```
 
-### 4.5 Download the Microsoft 365 module (Microsoft 365 only)
+> **Mac users who already use Homebrew** may see `externally-managed-environment` or a too-old Python. Use pipx instead, which keeps TargetZero in its own space:
+>
+> ```
+> brew install pipx
+> pipx ensurepath
+> pipx install "targetzero[gws]"
+> ```
+>
+> Open a new terminal. Then type `targetzero` wherever this guide says `py -m targetzero`, and update with `pipx upgrade targetzero`.
 
-The Microsoft 365 part is a PowerShell module. Until it is published on the PowerShell Gallery, you download it from GitHub:
+### 4.5 Install the Microsoft 365 module (Microsoft 365 only)
 
-1. Go to the latest release: <https://github.com/wiresecurity/TargetZero/releases/latest>.
-2. Under **Assets**, click **Source code (zip)**.
-3. Unzip it to a permanent place, for example:
-   - Windows: `C:\Tools\TargetZero`
-   - Mac: a folder `Tools/TargetZero` in your home folder
+The Microsoft 365 part is a PowerShell module, published on the PowerShell Gallery: <https://www.powershellgallery.com/packages/TargetZero>. In PowerShell 7:
 
-   Make sure that folder contains `README.md`, `powershell` and the other folders directly, not inside an extra sub-folder. If the zip created a sub-folder such as `TargetZero-0.3.2`, move its contents up one level.
-4. **Windows only:** mark the downloaded files as trusted. In PowerShell 7:
+```powershell
+Install-Module TargetZero -Scope CurrentUser
+```
 
-   ```powershell
-   Get-ChildItem C:\Tools\TargetZero -Recurse | Unblock-File
-   ```
+Answer **Y** if it asks whether you trust *PSGallery*. Check it works:
 
-To update the module later, download the new release and replace the folder's contents. Use the same version as your Python package (`py -m targetzero --version`).
+```powershell
+Get-Module TargetZero -ListAvailable
+```
+
+You should see version 0.3.2 or newer. To update later:
+
+```powershell
+Update-Module TargetZero
+```
+
+Keep the PowerShell module and the Python package on the same version (`py -m targetzero --version`).
 
 > In this guide all Python commands start with `py -m targetzero` (Mac: `python3 -m targetzero`). That always works, even when the shorter `targetzero` command is not found.
 
@@ -214,7 +229,7 @@ To update the module later, download the new release and replace the folder's co
 
 ## 5. Create your working folder (once)
 
-Your results go into a **working folder**, separate from the TargetZero download. Never put your results inside the TargetZero folder.
+Your results go into a **working folder** of their own. Keep it out of shared or synced folders that more people can read than need to.
 
 1. Create the folder, for example `C:\Target0\Acme` (Mac: `Target0/Acme` in your home folder). Use one folder per organisation.
 2. In a terminal, go to it and let TargetZero set it up:
@@ -313,7 +328,7 @@ Do only the parts that apply to you. Each step only **reads** information; nothi
 
    ```powershell
    cd C:\Target0\Acme
-   Import-Module C:\Tools\TargetZero\powershell\TargetZero
+   Import-Module TargetZero
    $config = Import-T0Config
    ```
 
@@ -653,11 +668,13 @@ Targets 3 and 7 are partly manual: keep `registers\alert_tests.csv` (the monthly
 | `No configuration found` | You are not in your working folder. `cd` to it first (section 5). |
 | `... is invalid:` followed by a line | A mistake in `targetzero.yaml`. The message names the setting. Check spaces and quotes (section 6). |
 | `Security Defaults is on` | See the warning in 9.4. Do not switch Security Defaults off on your own. |
-| `running scripts is disabled on this system` | Windows only: run the two Windows-only commands in 4.3 and 4.5. |
-| `The term 'Invoke-T0M365AdminInventory' is not recognized` | Run `Import-Module C:\Tools\TargetZero\powershell\TargetZero` first (in PowerShell **7**). |
+| `running scripts is disabled on this system` | Windows only: run the `Set-ExecutionPolicy` command in 4.3. |
+| `The term 'Invoke-T0M365AdminInventory' is not recognized` | Run `Import-Module TargetZero` first (in PowerShell **7**). If that fails too, install the module (4.5). |
 | `Need admin approval` in the browser | A Global Administrator must sign in once and approve the permissions (7.1). |
 | `Insufficient privileges` / `Forbidden` / HTTP 403 | Your account lacks the role from section 2. |
 | `Google Workspace support is not installed` | Install again with `[gws]` (4.4). |
+| `Requires-Python >=3.11` or `No matching distribution found for targetzero` | Your terminal uses a Python older than 3.11 (on a Mac often Apple's built-in 3.9). Check with `python3 --version` and see 4.2. |
+| `externally-managed-environment` | Your Python comes from Homebrew or Linux and does not allow direct installs. Use pipx (see the note at the end of 4.4). |
 | `No module named targetzero` | TargetZero is not installed for this Python. Run the install command in 4.4 again. |
 | A count shows `(incomplete)` | Read the `note:` lines under it. Often a site did not answer, or a licence or permission is missing. |
 | `crt.sh failed … 502` | A public website TargetZero uses was busy. Try again later. |

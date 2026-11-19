@@ -7,8 +7,8 @@
 PowerShell 7.4 or later:
 
 ```powershell
-Install-Module Microsoft.Graph.Authentication, powershell-yaml -Scope CurrentUser
-Import-Module ./powershell/TargetZero      # from the release zip, until it is on the PowerShell Gallery
+Install-Module TargetZero, Microsoft.Graph.Authentication -Scope CurrentUser
+Import-Module TargetZero
 ```
 
 Only `Microsoft.Graph.Authentication` is needed; the module calls Graph directly.

@@ -46,6 +46,12 @@ targetzero init                   # creates targetzero.yaml and registers/
 targetzero scorecard              # builds the scorecard from today's results
 ```
 
+Microsoft 365, in PowerShell 7.4 or later:
+
+```powershell
+Install-Module TargetZero, Microsoft.Graph.Authentication -Scope CurrentUser
+```
+
 See [docs/quickstart.md](docs/quickstart.md) for the full walk-through.
 
 ## What it checks and changes (0.3)

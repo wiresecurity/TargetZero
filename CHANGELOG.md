@@ -7,6 +7,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Changed
 - The step-by-step guide, README and quickstart install TargetZero from PyPI (`pip install targetzero`).
+- The PowerShell module is on the PowerShell Gallery (0.3.2): the docs install it with `Install-Module TargetZero` instead of the release zip.
+- Step-by-step guide: Mac notes (Apple's Python 3.9, pipx) and matching troubleshooting rows.
 
 ## [0.3.2] - 2026-11-19
 
