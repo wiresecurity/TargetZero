@@ -98,7 +98,7 @@ function New-T0M365AdminCaPolicy {
             Sort-Object Name -Descending | ForEach-Object { Join-Path $_.FullName '1_m365_admins.csv' } |
             Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
         if (-not $latest) { throw 'No admin inventory found. Run Invoke-T0M365AdminInventory first, or pass -Force.' }
-        $atRisk = @(Import-Csv -LiteralPath $latest | Where-Object {
+        $atRisk = @(Import-T0Csv -LiteralPath $latest | Where-Object {
                 $_.privileged -eq 'Y' -and $_.account_type -eq 'user' -and $_.break_glass -ne 'Y' -and $_.mfa_class -ne 'phishing-resistant'
             } | ForEach-Object account | Sort-Object -Unique)
         if ($atRisk) {

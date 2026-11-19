@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+- `docs/guide.md`: step-by-step guide for people without a technical background.
+
+### Fixed
+- Plans and registers saved by Excel with semicolons (Belgian, Dutch, French, German regional settings) are now read correctly, in both Python and PowerShell.
+
 ## [0.3.0] - 2026-11-19
 
 ### Added

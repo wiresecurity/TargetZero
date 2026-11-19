@@ -28,10 +28,17 @@ def base_name(zero: int, source: str, name: str) -> str:
     return f"{zero}_{source}_{name}"
 
 
+def delimiter_of(header: str) -> str:
+    """Excel with Belgian, Dutch, French or German settings saves CSV with semicolons."""
+    return ";" if header.count(";") > header.count(",") else ","
+
+
 def read_csv(path: Path) -> list[dict[str, str]]:
     # utf-8-sig: files saved by Excel start with a byte order mark.
     with path.open(newline="", encoding="utf-8-sig") as handle:
-        rows = csv.DictReader(handle)
+        delimiter = delimiter_of(handle.readline())
+        handle.seek(0)  # utf-8-sig skips the byte order mark again after a seek to 0
+        rows = csv.DictReader(handle, delimiter=delimiter)
         return [{k: (v or "").strip() for k, v in row.items() if k} for row in rows]
 
 

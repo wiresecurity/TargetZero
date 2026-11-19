@@ -1,6 +1,6 @@
 # Quick start
 
-This walk-through sets up TargetZero for one organisation. It takes about 15 minutes.
+This walk-through sets up TargetZero for one organisation. It takes about 15 minutes and assumes you are at home in a terminal. If you are not, follow the [step-by-step guide](guide.md) instead.
 
 ## 1. Install
 

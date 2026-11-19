@@ -16,6 +16,8 @@ TargetZero counts each one from live data, helps you fix what it finds on Micros
 
 > **Status: 0.3 (remediate).** Day 1 inventories plus the changes for days 6 to 10: reduce admin rights, break-glass accounts and Conditional Access on Microsoft 365, role and org unit changes on Google Workspace, WAF/CDN, dangling-DNS and enrichment checks, and collectors for Cisco ASA, iDRAC/iLO and vSphere. See [CHANGELOG.md](CHANGELOG.md).
 
+**New to this? Start with the [step-by-step guide](docs/guide.md).** It assumes no technical background and explains what you need and what to be careful about.
+
 ## How it works
 
 ```

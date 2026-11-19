@@ -35,7 +35,7 @@ function Set-T0M365RoleAssignment {
         [datetime]$RunDate = (Get-Date)
     )
     $actions = 'remove', 'make-eligible', 'time-bound', 'make-permanent', 'restore-active', 'restore-eligible', 'restore-app-permission'
-    $rows = @(Import-Csv -LiteralPath $PlanPath | Where-Object { $_.action })
+    $rows = @(Import-T0Csv -LiteralPath $PlanPath | Where-Object { $_.action })
     if (-not $rows) {
         Write-Warning "No rows with an action in $PlanPath. Fill in the action column first."
         return

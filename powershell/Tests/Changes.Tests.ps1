@@ -83,6 +83,13 @@ Describe 'Set-T0M365RoleAssignment' {
         Should -Invoke -ModuleName TargetZero Invoke-T0GraphWrite -ParameterFilter { $Method -eq 'POST' -and $Uri -eq 'servicePrincipals/sp-backup/appRoleAssignments' -and $Body.appRoleId -eq 'r-dir' }
     }
 
+    It 'reads a plan that Excel saved with semicolons' {
+        $text = (Get-Content -LiteralPath $planPath -Raw) -replace '","', '";"'
+        Set-Content -LiteralPath $planPath -Value $text -Encoding utf8BOM
+        $out = Set-T0M365RoleAssignment -Config $config -PlanPath $planPath
+        $out.status | Should -Be @('dry-run', 'refused', 'dry-run', 'refused')
+    }
+
     It 'refuses to remove the last active Global Administrator' {
         $script:activeGa = 1
         $out = Set-T0M365RoleAssignment -Config $config -PlanPath $planPath -Apply -Confirm:$false

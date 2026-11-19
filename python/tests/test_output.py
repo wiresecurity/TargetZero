@@ -78,3 +78,9 @@ def test_csv_round_trip_handles_excel_bom(tmp_path: Path) -> None:
     write_csv(path, [{"a": "1", "b": None}], ["a", "b"])
     path.write_bytes(b"\xef\xbb\xbf" + path.read_bytes())
     assert read_csv(path) == [{"a": "1", "b": ""}]
+
+
+def test_csv_saved_by_excel_with_semicolons(tmp_path: Path) -> None:
+    path = tmp_path / "plan.csv"
+    path.write_bytes("﻿plan_id;account;action\nP1;jane@x.com;remove\n".encode())
+    assert read_csv(path) == [{"plan_id": "P1", "account": "jane@x.com", "action": "remove"}]
