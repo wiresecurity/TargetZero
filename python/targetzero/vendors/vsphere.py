@@ -42,6 +42,12 @@ def connect(host: str, context: ssl.SSLContext) -> Any:
     return SmartConnect(host=host, user=user, pwd=password, sslContext=context)
 
 
+def disconnect(instance: Any) -> None:
+    from pyVim.connect import Disconnect
+
+    Disconnect(instance)
+
+
 def entity_name(entity: Any) -> str:
     try:
         return str(entity.name)

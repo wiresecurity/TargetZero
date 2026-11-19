@@ -85,3 +85,8 @@ packages = ["targetzero"]
 [[tool.mypy.overrides]]
 module = ["googleapiclient.*", "google_auth_oauthlib.*", "pyVim.*", "pyVmomi.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# pyvmomi has no type information.
+module = ["targetzero.vendors.vsphere"]
+disallow_untyped_calls = false

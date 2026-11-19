@@ -206,8 +206,6 @@ def cmd_vendors(args: argparse.Namespace) -> int:
             for h in args.host
         ]
     else:
-        from pyVim.connect import Disconnect
-
         context = redfish.ssl_context(args.ca_bundle, args.insecure)
         devices = []
         for host in args.host:
@@ -219,7 +217,7 @@ def cmd_vendors(args: argparse.Namespace) -> int:
                     )
                 )
             finally:
-                Disconnect(instance)
+                vsphere.disconnect(instance)
     return _print_paths(
         common.write_outputs(
             config,
