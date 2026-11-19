@@ -58,8 +58,12 @@ jobs:
           "PSModulePath=$folder$([IO.Path]::PathSeparator)$(Join-Path $PSHOME 'Modules')" >> $env:GITHUB_ENV
       - name: PSScriptAnalyzer
         run: |
+          # The manifest is checked with Test-ModuleManifest instead: the analyzer's manifest rule
+          # crashes intermittently on Windows ("Collection was modified").
+          Test-ModuleManifest -Path powershell/TargetZero/TargetZero.psd1 -ErrorAction Stop | Select-Object Name, Version
           # One file at a time, so a crash in the analyzer names the file.
-          $results = foreach ($file in Get-ChildItem powershell -Recurse -Include *.ps1, *.psm1, *.psd1) {
+          $results = foreach ($file in Get-ChildItem powershell -Recurse -Include *.ps1, *.psm1, *.psd1 |
+              Where-Object Name -ne 'TargetZero.psd1') {
             try {
               Invoke-ScriptAnalyzer -Path $file.FullName -Settings powershell/PSScriptAnalyzerSettings.psd1 -ErrorAction Stop
             }
