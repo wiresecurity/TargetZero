@@ -1,0 +1,38 @@
+# Your own data: never commit it.
+/targetzero.yaml
+/config/targetzero.yaml
+/privileged_roles.local.yaml
+/output/
+/registers/
+*.pfx
+*.pem
+*.key
+credentials*.json
+client_secret*.json
+service-account*.json
+
+# Campaign source documents kept next to the repo
+/Target 0.md
+/Target 0.pdf
+/TOOLING-PLAN.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# PowerShell / Pester
+/powershell/TargetZero/schemas/
+testResults.xml
+coverage.xml
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,57 @@
+# TargetZero configuration.
+# Copy this file to targetzero.yaml (which git ignores) and fill it in.
+# Relative paths are resolved against the folder that holds this file.
+
+organisation: Example Ltd
+
+# Where scripts write their results (output/<YYYY-MM-DD>/...) and where the
+# hand-maintained registers live (inventory, findings, exceptions, ...).
+output_dir: output
+registers_dir: registers
+
+# One owner per Target 0 count. Shown on the scorecard.
+owners:
+  "1": "Jane Doe, IT lead"
+  "2": "Jane Doe, IT lead"
+  "3": "Managed SOC / IT provider"
+  "4": "Jane Doe, IT lead"
+  "5": "Jane Doe, IT lead"
+  "6": "Jane Doe, IT lead"
+  "7": "Application owners"
+
+# Emergency ("break-glass") accounts. Never changed by any script and left
+# out of the Zero 1 count. Keep exactly two per platform.
+break_glass:
+  m365:
+    - bg-admin-01@example.onmicrosoft.com
+    - bg-admin-02@example.onmicrosoft.com
+  gws:
+    - bg-admin-01@example.com
+    - bg-admin-02@example.com
+
+# What you own and are authorised to scan. External checks never go outside
+# this list, not even for hosts they discover themselves.
+scope:
+  domains:
+    - example.com
+  ip_ranges:
+    - 203.0.113.0/28   # documentation range, replace with your own
+
+thresholds:
+  exception_max_days: 90       # Target 0: at most 90 days
+  inventory_review_days: 90    # inventory rows older than this count as outdated
+  alert_test_max_age_days: 35  # monthly test, with a few days of slack
+  deadline_hours:
+    kev: 8
+    critical: 24
+    high: 72
+
+m365:
+  tenant_id: ""                # e.g. example.onmicrosoft.com or the tenant GUID
+  client_id: ""                # only for unattended runs
+  certificate_thumbprint: ""
+
+gws:
+  customer_id: my_customer
+  admin_subject: ""            # admin account to impersonate
+  credentials_file: ""         # keep outside the repository

@@ -1,0 +1,24 @@
+name: New vendor collector
+description: Ask for (or offer) support for another firewall, VPN, hypervisor, backup or management product
+labels: [collector]
+body:
+  - type: input
+    id: product
+    attributes: { label: Vendor and product, placeholder: "Sophos Firewall v20" }
+    validations: { required: true }
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Data source
+      options: [Exported config file, Read-only API, Both]
+    validations: { required: true }
+  - type: textarea
+    id: docs
+    attributes: { label: Links to the vendor's API or config format documentation }
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I can provide a scrubbed sample config or API response
+        - label: I want to write the collector myself

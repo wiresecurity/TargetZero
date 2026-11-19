@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wiresecurity/TargetZero/schema/exceptions.schema.json",
+  "title": "TargetZero exception",
+  "description": "One row of registers/exceptions.csv. The schema checks the format only; validity (signed, expiry at most 90 days after signing, not expired) is checked by the scorecard.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "zero", "items", "description", "compensating_control", "accepted_by", "signed_date", "expiry_date"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^EXC-[A-Za-z0-9-]+$" },
+    "zero": { "type": "string", "pattern": "^[1-7]$" },
+    "items": { "type": "string", "description": "Item ids from the summaries, separated by semicolons." },
+    "description": { "type": "string", "description": "What it is and why it cannot be fixed now." },
+    "compensating_control": { "type": "string", "description": "What limits the risk in the meantime." },
+    "accepted_by": { "type": "string", "description": "Name and role of the manager who signed." },
+    "signed_date": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$" },
+    "expiry_date": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$" },
+    "notes": { "type": "string" }
+  }
+}

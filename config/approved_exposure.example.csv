@@ -1,0 +1,4 @@
+host,port,protocol,justification,owner,approved_by,review_date
+www.example.com,443,tcp,Public website behind CDN,Jane Doe,John Smith (CEO),2027-02-19
+vpn.example.com,443,tcp,SSL VPN for remote staff (MFA enforced),Jane Doe,John Smith (CEO),2027-02-19
+mail.example.com,25,tcp,Inbound mail relay,Jane Doe,John Smith (CEO),2027-02-19

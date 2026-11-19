@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+# Keeps the commit-hash pins in the workflows and the Python dependencies up to date.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14

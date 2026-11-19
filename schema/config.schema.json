@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wiresecurity/TargetZero/schema/config.schema.json",
+  "title": "TargetZero configuration",
+  "description": "Schema for targetzero.yaml. Relative paths are resolved against the folder that holds the config file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["organisation"],
+  "properties": {
+    "organisation": { "type": "string", "minLength": 1 },
+    "output_dir": { "type": "string", "minLength": 1, "default": "output" },
+    "registers_dir": { "type": "string", "minLength": 1, "default": "registers" },
+    "owners": {
+      "type": "object",
+      "description": "Owner per Target 0 count, keyed 1 to 7.",
+      "propertyNames": { "pattern": "^[1-7]$" },
+      "additionalProperties": { "type": "string" }
+    },
+    "break_glass": {
+      "type": "object",
+      "description": "Emergency accounts per source. Scripts never change these and leave them out of the Zero 1 count.",
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "additionalProperties": { "type": "array", "items": { "type": "string", "minLength": 1 }, "maxItems": 4 }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What you own and are authorised to scan. External checks never go outside this list.",
+      "properties": {
+        "domains": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "ip_ranges": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "exception_max_days": { "type": "integer", "minimum": 1, "maximum": 90, "default": 90 },
+        "inventory_review_days": { "type": "integer", "minimum": 1, "default": 90 },
+        "alert_test_max_age_days": { "type": "integer", "minimum": 1, "default": 35 },
+        "deadline_hours": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kev": { "type": "integer", "minimum": 1, "default": 8 },
+            "critical": { "type": "integer", "minimum": 1, "default": 24 },
+            "high": { "type": "integer", "minimum": 1, "default": 72 }
+          }
+        }
+      }
+    },
+    "m365": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tenant_id": { "type": "string" },
+        "client_id": { "type": "string", "description": "App registration for unattended runs. Leave empty for interactive sign-in." },
+        "certificate_thumbprint": { "type": "string" }
+      }
+    },
+    "gws": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "customer_id": { "type": "string", "default": "my_customer" },
+        "admin_subject": { "type": "string", "description": "Admin account the service account impersonates." },
+        "credentials_file": { "type": "string", "description": "Service account key or OAuth client file. Keep it outside the repository." }
+      }
+    }
+  }
+}

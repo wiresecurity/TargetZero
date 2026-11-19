@@ -1,0 +1,32 @@
+# Roles that count as "full admin" for Zero 1 and Zero 2.
+# Roles not listed here are still reported, with privileged = N.
+# Change this list to match your own risk view; keep the names exactly as the
+# platform shows them.
+
+m365:
+  # Entra ID built-in roles (display names)
+  - Global Administrator
+  - Privileged Role Administrator
+  - Privileged Authentication Administrator
+  - Security Administrator
+  - Conditional Access Administrator
+  - Exchange Administrator
+  - SharePoint Administrator
+  - Teams Administrator
+  - User Administrator
+  - Authentication Administrator
+  - Application Administrator
+  - Cloud Application Administrator
+  - Intune Administrator
+  - Hybrid Identity Administrator
+  - Domain Name Administrator
+  - Partner Tier2 Support
+  - Directory Synchronization Accounts
+
+gws:
+  # Google Workspace system roles
+  - Super Admin
+  - Groups Admin
+  - User Management Admin
+  - Services Admin
+  - Mobile Admin

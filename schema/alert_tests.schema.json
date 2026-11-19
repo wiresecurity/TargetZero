@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wiresecurity/TargetZero/schema/alert_tests.schema.json",
+  "title": "TargetZero alert test",
+  "description": "One row of registers/alert_tests.csv: the monthly odd-hour admin logon test for one system (Zero 3). Filled in by hand.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "system", "account", "test_time", "alert_received"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "system": { "type": "string", "minLength": 1 },
+    "account": { "type": "string", "minLength": 1 },
+    "test_time": { "type": "string", "minLength": 10, "description": "ISO 8601 timestamp of the test logon." },
+    "alert_received": { "enum": ["Y", "N"] },
+    "received_at": { "type": "string" },
+    "received_by": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}

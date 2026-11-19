@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wiresecurity/TargetZero/schema/findings.schema.json",
+  "title": "TargetZero vulnerability finding",
+  "description": "One row of registers/findings.csv: a known vulnerability on a public asset (Zero 6).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "asset_id", "vulnerability", "severity", "published", "deadline", "status"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+:[^\\s;]+$" },
+    "asset_id": { "type": "string", "minLength": 1, "description": "id of the inventory row." },
+    "vulnerability": { "type": "string", "minLength": 1, "description": "CVE id or vendor advisory id." },
+    "title": { "type": "string" },
+    "severity": { "enum": ["kev", "critical", "high", "medium", "low"], "description": "kev = known exploited; deadlines 8 h / 24 h / 72 h apply to kev / critical / high." },
+    "published": { "type": "string", "minLength": 10, "description": "ISO 8601 date or timestamp." },
+    "deadline": { "type": "string", "minLength": 10, "description": "ISO 8601 timestamp." },
+    "status": { "enum": ["open", "mitigated", "patched", "exception"] },
+    "action": { "type": "string" },
+    "owner": { "type": "string" },
+    "closed_date": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$" },
+    "notes": { "type": "string" }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wiresecurity/TargetZero/schema/inventory.schema.json",
+  "title": "TargetZero inventory row",
+  "description": "One row of registers/inventory.csv: one public IP, domain or subdomain (Zero 5).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "asset", "type", "status"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+:[^\\s;]+$" },
+    "asset": { "type": "string", "minLength": 1 },
+    "type": { "enum": ["ip", "domain", "subdomain"] },
+    "ip": { "type": "string" },
+    "owner": { "type": "string" },
+    "purpose": { "type": "string" },
+    "product": { "type": "string" },
+    "version": { "type": "string" },
+    "vendor_supported": { "enum": ["Y", "N", "?", ""] },
+    "eol_date": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$" },
+    "behind_waf": { "enum": ["Y", "N", "?", "n/a", ""] },
+    "internet_facing_app": { "enum": ["Y", "N", ""] },
+    "status": { "enum": ["reviewed", "unreviewed", "retired"] },
+    "last_reviewed": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$" },
+    "notes": { "type": "string" }
+  }
+}

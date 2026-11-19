@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wiresecurity/TargetZero/schema/summary.schema.json",
+  "title": "TargetZero count summary",
+  "description": "Written by every TargetZero script next to its CSV records. The scorecard reads only these files. Any tool can feed the scorecard by writing a valid summary.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "zero", "source", "name", "tool", "tool_version", "run_date", "generated_at", "count", "complete", "items"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "zero": { "type": "integer", "minimum": 1, "maximum": 7, "description": "Target 0 count this summary contributes to." },
+    "source": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Platform or system, e.g. m365, gws, external, fortigate." },
+    "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Short name of the check, e.g. admins, mfa, exposure." },
+    "tool": { "type": "string", "minLength": 1 },
+    "tool_version": { "type": "string", "minLength": 1 },
+    "run_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "generated_at": { "type": "string", "minLength": 20, "description": "ISO 8601 timestamp with time zone." },
+    "count": { "type": "integer", "minimum": 0, "description": "Must equal the number of items." },
+    "complete": { "type": "boolean", "description": "False when the check could not see everything (missing permission, licence, unreachable system). The scorecard flags incomplete counts." },
+    "notes": { "type": "array", "items": { "type": "string" }, "description": "Which path was used, licence fallbacks, warnings." },
+    "record_file": { "type": "string", "description": "CSV file with the full records, relative to the summary file." },
+    "items": {
+      "type": "array",
+      "description": "Every item counted. Exceptions refer to these ids.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "reason"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+:[^\\s;]+$", "description": "<source>:<stable identifier> without spaces or semicolons, e.g. m365:admin@contoso.com/global-administrator. The same item must get the same id on every run." },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

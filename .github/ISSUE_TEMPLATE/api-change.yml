@@ -1,0 +1,15 @@
+name: Platform or vendor API change
+description: A Microsoft, Google or vendor change broke or will break a script
+labels: [api-change]
+body:
+  - type: input
+    id: platform
+    attributes: { label: Platform or vendor, placeholder: "Microsoft Graph / Google Admin SDK / FortiOS 7.6" }
+    validations: { required: true }
+  - type: textarea
+    id: change
+    attributes: { label: What changed (link to announcement if any) }
+    validations: { required: true }
+  - type: input
+    id: script
+    attributes: { label: Affected script(s) }

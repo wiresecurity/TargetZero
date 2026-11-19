@@ -1,0 +1,22 @@
+name: Bug
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "**Do not paste tenant ids, domains, IP addresses, account names or keys.** Replace them with example.com / 203.0.113.x. Security vulnerabilities go through SECURITY.md, not here."
+  - type: input
+    id: script
+    attributes: { label: Script or command, placeholder: "targetzero scorecard / Export-T0Summary" }
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes: { label: TargetZero version }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: What happened, and what did you expect? }
+    validations: { required: true }
+  - type: textarea
+    id: output
+    attributes: { label: Error output (scrubbed), render: text }

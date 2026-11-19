@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wiresecurity/TargetZero/schema/admins.schema.json",
+  "title": "TargetZero admin record",
+  "description": "One row of an admin CSV. Every admin source (M365, Google Workspace, vendor collectors, manual register) writes this format, so Zero 1 and Zero 2 can be counted across all systems.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "source", "system", "account", "role", "privileged", "permanent", "mfa_class", "mfa_enforced", "break_glass"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+:[^\\s;]+$" },
+    "source": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "system": { "type": "string", "minLength": 1, "description": "Tenant, domain, device or console name." },
+    "account": { "type": "string", "minLength": 1 },
+    "role": { "type": "string", "minLength": 1 },
+    "privileged": { "enum": ["Y", "N"], "description": "Y when the role counts as full admin." },
+    "permanent": { "enum": ["Y", "N"], "description": "Y when the role is active with no end date." },
+    "end_date": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$" },
+    "mfa_class": { "enum": ["phishing-resistant", "mfa", "does-not-count", "none", "unknown"] },
+    "mfa_enforced": { "enum": ["Y", "N", "unknown"] },
+    "separate_admin_account": { "enum": ["Y", "N", "unknown", ""] },
+    "break_glass": { "enum": ["Y", "N"] },
+    "last_logon": { "type": "string" },
+    "last_verified": { "type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$" },
+    "notes": { "type": "string" }
+  }
+}
