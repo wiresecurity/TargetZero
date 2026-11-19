@@ -78,3 +78,51 @@ The licence found is written in the summary notes.
 - Exchange Online and other workload role groups (e.g. *Organization Management*). List their members in `registers/manual_admins.csv`.
 - PIM for Groups eligible membership.
 - Azure RBAC (subscription owners): planned for 1.0.
+
+## Making changes (0.3)
+
+Change commands never decide on their own. They read a plan that a person has reviewed, show what they would do, and change something only with `-Apply`. Every applied run writes a log and a rollback plan in `output/<date>/`.
+
+Sign in for changes with an account that holds the needed role (see each command). `-ReadWrite` always uses interactive sign-in, so changes are made by a person, never by the unattended app:
+
+```powershell
+Connect-T0M365 -Config $config -ReadWrite
+```
+
+### 1. Break-glass accounts first
+
+```powershell
+New-T0M365BreakGlassAccount -Config $config            # dry run
+New-T0M365BreakGlassAccount -Config $config -Apply
+```
+
+Creates two cloud-only Global Administrators on the `onmicrosoft.com` domain (names from `break_glass.m365`), the group `T0-BreakGlass`, and shows each password **once**. It is never written to disk or to the log. Store the passwords offline and register FIDO2 keys on both accounts. Role: Global Administrator, or Privileged Role Administrator plus User Administrator.
+
+### 2. Reduce admin rights
+
+`Invoke-T0M365AdminInventory` also writes `1_m365_role-plan.csv`: one row per role assignment as Entra ID stores it (a group that holds a role is one row). Fill in `action`:
+
+| action | Effect | Needs |
+| --- | --- | --- |
+| `remove` | Remove the role or the app permission | |
+| `make-eligible` | Replace the active assignment with a PIM-eligible one (optional end date in `new_end_date`) | Entra ID P2 |
+| `time-bound` | Keep it active until `new_end_date` | Entra ID P2 |
+| `make-permanent`, `restore-active`, `restore-eligible`, `restore-app-permission` | Used by rollback plans | |
+
+```powershell
+Set-T0M365RoleAssignment -Config $config -PlanPath output/2026-11-19/1_m365_role-plan.csv          # dry run
+Set-T0M365RoleAssignment -Config $config -PlanPath output/2026-11-19/1_m365_role-plan.csv -Apply   # asks per change
+```
+
+It refuses to touch break-glass accounts and refuses any change that would leave no active Global Administrator. To undo a run: `Set-T0M365RoleAssignment -PlanPath output/<date>/rollback_m365_roles_<time>.csv -Apply`. Role: Privileged Role Administrator.
+
+### 3. Conditional Access for admins
+
+```powershell
+New-T0M365AdminCaPolicy -Config $config -Apply            # report-only
+New-T0M365AdminCaPolicy -Config $config -Apply -Enable    # enforce, after checking the report
+```
+
+Creates *T0 - Admins require phishing-resistant MFA* (privileged roles, all apps, built-in phishing-resistant strength) and *T0 - Block legacy authentication* (all users). Both exclude `T0-BreakGlass`. The directory sync role is left out, because that account cannot do MFA.
+
+`-Enable` first reads the latest admin inventory and refuses while any privileged admin has no phishing-resistant method, because that admin would be locked out. Run `Invoke-T0M365AdminInventory` again after keys are registered. Without Entra ID P1, use `-UseSecurityDefaults` instead. Role: Conditional Access Administrator.

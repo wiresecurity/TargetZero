@@ -6,6 +6,8 @@ function Invoke-T0M365AdminInventory {
     .DESCRIPTION
         Read-only. Writes, in output/<date>/:
           1_m365_admins.csv            one row per admin and role
+          1_m365_role-plan.csv         one row per role assignment, with an empty action column
+                                       for Set-T0M365RoleAssignment
           1_m365_admins.summary.json   Zero 1: permanent privileged admins
           2_m365_mfa.summary.json      Zero 2: admins without MFA that counts, or not enforced
 
@@ -217,6 +219,7 @@ function Invoke-T0M365AdminInventory {
     }
 
     # Apps with high-risk Graph application permissions.
+    $appPlan = [System.Collections.Generic.List[object]]::new()
     try {
         $graph = Invoke-T0Graph -Uri "servicePrincipals(appId='00000003-0000-0000-c000-000000000000')?`$select=id,appRoles"
         $appRoles = @{}
@@ -225,6 +228,12 @@ function Invoke-T0M365AdminInventory {
             $permission = $appRoles[$grant['appRoleId']]
             if ($riskyPermissions -notcontains $permission) { continue }
             $account = "$($grant['principalDisplayName']) (app)"
+            $appPlan.Add([ordered]@{
+                    kind = 'app-permission'; account = $account; principal_id = $grant['principalId']; principal_type = 'servicePrincipal'
+                    role = "Graph application permission $permission"; state = 'active'; permanent = 'Y'
+                    assignment_id = $grant['id']; resource_id = $grant['resourceId']; app_role_id = $grant['appRoleId']
+                    privileged = 'Y'; break_glass = 'N'; mfa_class = ''
+                })
             $records.Add(@{
                     id = ConvertTo-T0Id -Source m365 -Part $system, $account, "graph-$permission"
                     source = 'm365'; system = $system; account = $account; role = "Graph application permission $permission"
@@ -239,7 +248,41 @@ function Invoke-T0M365AdminInventory {
         $notes.Add("Could not read application permissions: $($_.Exception.Message)")
     }
 
+    # --- Role plan: one row per assignment as Entra ID stores it (groups not expanded) ----------
+    $plan = [System.Collections.Generic.List[object]]::new()
+    foreach ($a in $assignments) {
+        $raw = $a.Raw
+        if ($raw.ContainsKey('memberType') -and $raw['memberType'] -eq 'Inherited') { continue }
+        $principal = $raw['principal']
+        $type = ([string]$principal['@odata.type']) -replace '^#microsoft\.graph\.', ''
+        $info = if ($type -eq 'user' -and $userInfo.ContainsKey($principal['id'])) { $userInfo[$principal['id']] } else { $null }
+        $account = switch ($type) {
+            'user' { if ($info) { $info.Upn } else { [string]$principal['userPrincipalName'] } }
+            'group' { "$($principal['displayName']) (group)" }
+            default { "$($principal['displayName']) (app)" }
+        }
+        $role = $roles[$raw['roleDefinitionId']]
+        $roleName = if ($role) { $role['displayName'] } else { $raw['roleDefinitionId'] }
+        $plan.Add([ordered]@{
+                kind = 'role'; account = $account; principal_id = $principal['id']; principal_type = $type
+                role = $roleName; role_definition_id = $raw['roleDefinitionId']; directory_scope_id = $raw['directoryScopeId']
+                state = $a.State; permanent = if ($a.Permanent) { 'Y' } else { 'N' }
+                current_end_date = if ($a.End) { ([datetime]$a.End).ToString('yyyy-MM-dd', [cultureinfo]::InvariantCulture) } else { '' }
+                assignment_id = $raw['id']; privileged = if ($privileged -contains $roleName) { 'Y' } else { 'N' }
+                break_glass = if ($info) { $info.BreakGlass } else { 'N' }; mfa_class = if ($info) { $info.MfaClass } else { '' }
+            })
+    }
+    $plan.AddRange($appPlan)
+    $planRows = for ($i = 0; $i -lt $plan.Count; $i++) {
+        $row = [ordered]@{}
+        foreach ($f in $script:T0RolePlanFields) { $row[$f] = if ($plan[$i].Contains($f)) { [string]$plan[$i][$f] } else { '' } }
+        $row['plan_id'] = 'P{0:D4}' -f ($i + 1)
+        [pscustomobject]$row
+    }
+
     $dir = Get-T0RunDirectory -Config $Config -RunDate $RunDate
+    $planPath = Export-T0Record -RunDirectory $dir -Zero 1 -Source m365 -Name role-plan -Records @($planRows) -Property $script:T0RolePlanFields
+    $planPath
     Export-T0AdminSummary -RunDirectory $dir -Source m365 -Records $records.ToArray() -Tool 'Invoke-T0M365AdminInventory' `
         -RunDate $RunDate -Complete $complete -Notes $notes.ToArray()
 }

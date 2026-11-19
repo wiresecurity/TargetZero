@@ -134,7 +134,7 @@ def test_classify(enrolled: bool, methods: list[str], expected: str) -> None:
 
 
 def test_collect(scoped: Config) -> None:
-    records, notes = admins.collect(fake_gws(), scoped, days=30)
+    records, notes, plan = admins.collect(fake_gws(), scoped, days=30)
     by_key = {(r["account"], r["role"]): r for r in records}
     jane = by_key[("jane@example.com", "Super Admin")]
     assert (jane["mfa_class"], jane["privileged"], jane["separate_admin_account"]) == (
@@ -155,3 +155,153 @@ def test_collect(scoped: Config) -> None:
     assert by_key[("bg@example.com", "Super Admin")]["break_glass"] == "Y"
     assert by_key[("eve@example.com", "Super Admin")]["mfa_class"] == "unknown"
     assert any("assigned to a group" in n for n in notes)
+    assert {p["account"] for p in plan} == {
+        "jane@example.com",
+        "bob@example.com",
+        "bg@example.com",
+        "eve@example.com",
+    }
+
+
+# --- gws apply ----------------------------------------------------------------
+
+
+def plan_file(tmp_path, rows):  # type: ignore[no-untyped-def]
+    from targetzero.common.output import write_csv
+    from targetzero.gws.changes import PLAN_FIELDS
+
+    path = tmp_path / "plan.csv"
+    write_csv(path, [{f: r.get(f, "") for f in PLAN_FIELDS} for r in rows], PLAN_FIELDS)
+    return path
+
+
+class Recorder:
+    def __init__(self, super_admins: int) -> None:
+        self.calls: list[tuple[str, dict[str, Any]]] = []
+        self.super_admins = super_admins
+
+    def gws(self) -> Gws:
+        def record(name: str) -> Callable[..., dict[str, Any]]:
+            def call(**params: Any) -> dict[str, Any]:
+                self.calls.append((name, params))
+                return {"roleAssignmentId": "new"}
+
+            return call
+
+        directory = Resource()
+        directory.users = lambda: Resource(  # type: ignore[attr-defined]
+            list=lambda **_: {"users": [{"id": str(i)} for i in range(self.super_admins)]},
+            makeAdmin=record("makeAdmin"),
+            update=record("update"),
+        )
+        directory.roleAssignments = lambda: Resource(  # type: ignore[attr-defined]
+            delete=record("delete"), insert=record("insert")
+        )
+        return Gws(directory, Resource(), "my_customer")
+
+
+PLAN = [
+    {
+        "plan_id": "P1",
+        "account": "jane@example.com",
+        "user_id": "1",
+        "role": "Super Admin",
+        "role_id": "r1",
+        "role_assignment_id": "ra1",
+        "super_admin": "Y",
+        "org_unit": "/",
+        "action": "revoke",
+    },
+    {
+        "plan_id": "P2",
+        "account": "bg@example.com",
+        "user_id": "3",
+        "role": "Super Admin",
+        "super_admin": "Y",
+        "action": "revoke",
+    },
+    {
+        "plan_id": "P3",
+        "account": "bob@example.com",
+        "user_id": "2",
+        "role": "Help Desk Admin",
+        "role_id": "r3",
+        "role_assignment_id": "ra3",
+        "super_admin": "N",
+        "org_unit": "/Staff",
+        "action": "move-ou",
+        "target_org_unit": "/Admins",
+    },
+    {
+        "plan_id": "P4",
+        "account": "eve@example.com",
+        "user_id": "4",
+        "role": "Super Admin",
+        "super_admin": "Y",
+        "action": "",
+    },
+]
+
+
+def test_apply_dry_run_changes_nothing(scoped: Config, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from datetime import date
+
+    from targetzero.gws.changes import apply_plan
+
+    recorder = Recorder(super_admins=4)
+    results, paths = apply_plan(
+        scoped, recorder.gws(), plan_file(tmp_path, PLAN), date(2026, 11, 19)
+    )
+    assert [r["status"] for r in results] == ["dry-run", "refused", "dry-run"]
+    assert "break-glass" in results[1]["detail"]
+    assert recorder.calls == []
+    assert paths[0].name.startswith("dryrun_gws_roles_")
+
+
+def test_apply_and_rollback(scoped: Config, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from datetime import date
+
+    from targetzero.common.output import read_csv
+    from targetzero.gws.changes import apply_plan
+
+    recorder = Recorder(super_admins=4)
+    results, paths = apply_plan(
+        scoped, recorder.gws(), plan_file(tmp_path, PLAN), date(2026, 11, 19), apply=True
+    )
+    assert [r["status"] for r in results] == ["applied", "refused", "applied"]
+    assert recorder.calls == [
+        ("delete", {"customer": "my_customer", "roleAssignmentId": "ra1"}),
+        ("update", {"userKey": "2", "body": {"orgUnitPath": "/Admins"}}),
+    ]
+    rollback = read_csv(paths[1])
+    assert [(r["action"], r["target_org_unit"]) for r in rollback] == [
+        ("restore-role", ""),
+        ("move-ou", "/Staff"),
+    ]
+
+    recorder.calls.clear()
+    apply_plan(scoped, recorder.gws(), paths[1], date(2026, 11, 19), apply=True)
+    assert recorder.calls[0] == (
+        "insert",
+        {
+            "customer": "my_customer",
+            "body": {"roleId": "r1", "assignedTo": "1", "scopeType": "CUSTOMER"},
+        },
+    )
+    assert recorder.calls[1] == ("update", {"userKey": "2", "body": {"orgUnitPath": "/Staff"}})
+
+
+def test_apply_keeps_two_super_admins(scoped: Config, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from datetime import date
+
+    from targetzero.gws.changes import apply_plan
+
+    results, _ = apply_plan(
+        scoped,
+        Recorder(super_admins=2).gws(),
+        plan_file(tmp_path, PLAN[:1]),
+        date(2026, 11, 19),
+        apply=True,
+    )
+    assert results[0]["status"] == "refused"
+    assert "fewer than 2 super admins" in results[0]["detail"]

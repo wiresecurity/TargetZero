@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "targetzero"
-version = "0.2.0"
+version = "0.3.0"
 description = "Tooling for the Target 0 campaign: count, fix and report seven security zeros."
 readme = "README.md"
 license = "Apache-2.0"
@@ -29,6 +29,9 @@ gws = [
     "google-api-python-client>=2.130",
     "google-auth>=2.30",
     "google-auth-oauthlib>=1.2",
+]
+vsphere = [
+    "pyvmomi>=8.0.2",
 ]
 dev = [
     "pytest>=8",
@@ -80,5 +83,5 @@ mypy_path = "python"
 packages = ["targetzero"]
 
 [[tool.mypy.overrides]]
-module = ["googleapiclient.*", "google_auth_oauthlib.*"]
+module = ["googleapiclient.*", "google_auth_oauthlib.*", "pyVim.*", "pyVmomi.*"]
 ignore_missing_imports = true

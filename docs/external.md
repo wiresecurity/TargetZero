@@ -47,3 +47,24 @@ NVD_API_KEY=... targetzero external kev      # faster NVD lookups (free key from
 - Without a version, only KEV entries from the last 30 days (`--recent-days`) are reported, with a note to confirm.
 - With `--internetdb` scan data from today, CVEs that InternetDB reports for your addresses are matched too.
 - New findings go into `registers/findings.csv` with a deadline (KEV: 8 hours after it was added to the catalog). Rows you updated are never changed. Set `status` to `patched` or `mitigated` when done, then recount with `targetzero registers findings`.
+
+## `targetzero external waf` (Zero 4)
+
+Checks that every web name in scope resolves into a known WAF/CDN: Cloudflare, CloudFront and Fastly by their published IP ranges; Akamai, Azure Front Door, Imperva and Sucuri by CNAME.
+
+```bash
+targetzero external waf
+targetzero external waf --authorised     # also test origins
+```
+
+- A name counts when it serves web traffic (port 443 or 80 open) and is not behind a known provider.
+- Set `behind_waf` to `n/a` in the inventory for names that are not websites (a VPN portal, a mail server); they are skipped.
+- To check that an origin server refuses direct traffic, list it in `registers/origins.csv` (`host,origin_ip`). With `--authorised`, TargetZero connects to the origin address with the site's name. An answer means the origin can be reached around the WAF, which counts. Only origins inside `scope.ip_ranges` are tested.
+
+## `targetzero external enrich` (Zero 5)
+
+Probes every in-scope inventory asset once and writes suggestions to `output/<date>/5_external_enrich.csv`: TLS version and certificate, `Server` and `X-Powered-By` headers, product and version (also from InternetDB CPEs), and support status from endoflife.date for nginx, Apache, PHP, Tomcat, OpenSSL and Node.js. The inventory itself is not changed; copy what is right.
+
+## `targetzero external dangling-dns` (Zero 5)
+
+Finds names whose CNAME points to something that no longer exists, or to an unclaimed bucket, app or page (Amazon S3, GitHub Pages, Heroku, Azure App Service, Shopify, Zendesk, Fastly, Surge) that someone else could take over. Each one counts until the DNS record is deleted. Names come from the inventory and today's discovery. A records pointing to released cloud addresses are not detected.

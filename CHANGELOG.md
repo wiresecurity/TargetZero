@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-19
+
+### Added
+- Microsoft 365 changes, all dry run unless `-Apply`, with a change log and a rollback plan:
+  - `Set-T0M365RoleAssignment` applies the role plan that `Invoke-T0M365AdminInventory` now writes (`1_m365_role-plan.csv`): remove roles and app permissions, make them PIM-eligible or time-bound. Refuses to touch break-glass accounts or to remove the last active Global Administrator.
+  - `New-T0M365BreakGlassAccount` creates two cloud-only emergency Global Administrators and the `T0-BreakGlass` group. Passwords are shown once, never stored.
+  - `New-T0M365AdminCaPolicy` creates *T0 - Admins require phishing-resistant MFA* and *T0 - Block legacy authentication* in report-only mode; `-Enable` refuses while an admin would be locked out. Security Defaults as the fallback without Entra ID P1.
+  - `Connect-T0M365 -ReadWrite` for interactive sign-in with write permissions.
+- Google Workspace changes: `targetzero gws apply` applies the role plan from `gws admins` (`1_gws_role-plan.csv`): revoke roles, move admins to an org unit. Keeps at least two super admins.
+- External checks: `external waf` (WAF/CDN coverage, origin reachability from `registers/origins.csv`), `external enrich` (TLS, headers, product and support suggestions) and `external dangling-dns` (subdomain takeover candidates).
+- Collectors: Cisco ASA (offline), Redfish for iDRAC/iLO (live, read-only) and VMware vSphere (live, read-only, `[vsphere]` extra).
+
+### Not yet
+- SonicWall and Veeam collectors: waiting for real sample exports to build against.
+
 ## [0.2.0] - 2026-11-19
 
 ### Added

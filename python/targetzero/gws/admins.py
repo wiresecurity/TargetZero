@@ -23,8 +23,9 @@ from typing import Any
 
 from targetzero.admins import record_id, write_admin_outputs
 from targetzero.common.config import Config
-from targetzero.common.output import run_dir
+from targetzero.common.output import run_dir, write_csv
 from targetzero.common.roles import privileged_roles
+from targetzero.gws.changes import PLAN_FIELDS
 from targetzero.gws.client import Gws
 
 SOURCE = "gws"
@@ -110,7 +111,9 @@ def is_time_bound(assignment: Mapping[str, Any]) -> bool:
     return "request.time" in str(assignment.get("condition", ""))
 
 
-def collect(gws: Gws, config: Config, days: int) -> tuple[list[dict[str, str]], list[str]]:
+def collect(
+    gws: Gws, config: Config, days: int
+) -> tuple[list[dict[str, str]], list[str], list[dict[str, str]]]:
     notes: list[str] = []
     privileged = privileged_roles(config, "gws")
     break_glass = set(config.break_glass(SOURCE))
@@ -156,6 +159,7 @@ def collect(gws: Gws, config: Config, days: int) -> tuple[list[dict[str, str]], 
         notes.append("Gmail usage reports unavailable: separate_admin_account left empty")
 
     records = []
+    plan: list[dict[str, str]] = []
     for user, role, grant in pairs:
         email = user["primaryEmail"].lower()
         name = str(role.get("roleName", "")).replace("_", " ")
@@ -191,16 +195,36 @@ def collect(gws: Gws, config: Config, days: int) -> tuple[list[dict[str, str]], 
                 "notes": "; ".join(extra),
             }
         )
-    return records, notes
+        plan.append(
+            {
+                "plan_id": f"P{len(plan) + 1:04d}",
+                "account": email,
+                "user_id": user["id"],
+                "role": name,
+                "role_id": str(role.get("roleId", "")),
+                "role_assignment_id": str(grant.get("roleAssignmentId", "")) if grant else "",
+                "scope_type": str(grant.get("scopeType", "CUSTOMER")) if grant else "CUSTOMER",
+                "super_admin": "Y" if role.get("isSuperAdminRole") else "N",
+                "org_unit": user.get("orgUnitPath", "/"),
+                "break_glass": "Y" if email in break_glass else "N",
+                "mfa_class": mfa_class,
+            }
+        )
+    return records, notes, plan
 
 
 def run(config: Config, run_date: date, gws: Gws, days: int = 30) -> list[Path]:
-    records, notes = collect(gws, config, days)
-    return write_admin_outputs(
-        run_dir(config.output_dir, run_date),
-        source=SOURCE,
-        records=records,
-        tool="targetzero gws admins",
-        run_date=run_date,
-        notes=notes,
-    )
+    records, notes, plan = collect(gws, config, days)
+    directory = run_dir(config.output_dir, run_date)
+    plan_path = write_csv(directory / "1_gws_role-plan.csv", plan, PLAN_FIELDS)
+    return [
+        plan_path,
+        *write_admin_outputs(
+            directory,
+            source=SOURCE,
+            records=records,
+            tool="targetzero gws admins",
+            run_date=run_date,
+            notes=notes,
+        ),
+    ]

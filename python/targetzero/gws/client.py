@@ -28,6 +28,15 @@ READ_SCOPES = (
 )
 
 
+# Only for `targetzero gws apply`. Add these to the domain-wide delegation entry only when you
+# want to make changes, and remove them again afterwards.
+WRITE_SCOPES = (
+    *READ_SCOPES,
+    "https://www.googleapis.com/auth/admin.directory.user",
+    "https://www.googleapis.com/auth/admin.directory.rolemanagement",
+)
+
+
 class Gws:
     """Thin wrapper so tests can replace the API with a fake."""
 

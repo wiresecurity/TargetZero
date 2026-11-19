@@ -60,3 +60,27 @@ To allow only security keys for admins, put them in a dedicated org unit and set
 ## Not covered yet
 
 - Roles assigned to **groups** are noted but not expanded: list those members in `registers/manual_admins.csv`.
+
+## Making changes (0.3)
+
+`targetzero gws admins` also writes `1_gws_role-plan.csv`. Fill in `action`:
+
+| action | Effect |
+| --- | --- |
+| `revoke` | Remove the role. A super admin without an explicit assignment loses super admin status. |
+| `move-ou` | Move the admin into `target_org_unit`, e.g. `/Admins` (where you enforce security keys) |
+| `restore-role`, `restore-super-admin` | Used by rollback plans |
+
+```bash
+targetzero gws apply output/2026-11-19/1_gws_role-plan.csv            # dry run
+targetzero gws apply output/2026-11-19/1_gws_role-plan.csv --apply    # asks for confirmation
+```
+
+It never changes break-glass accounts and refuses to leave fewer than two super admins. Each applied run writes `rollback_gws_roles_<time>.csv`; apply it the same way to undo.
+
+Changes need two more scopes. Add them to the domain-wide delegation entry only while you make changes, and remove them afterwards:
+
+```
+https://www.googleapis.com/auth/admin.directory.user
+https://www.googleapis.com/auth/admin.directory.rolemanagement
+```

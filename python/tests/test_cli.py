@@ -28,7 +28,9 @@ def test_templates_validate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.chdir(tmp_path)
     main(["init"])
     files = [
-        str(p) for p in (tmp_path / "registers").glob("*.csv") if p.stem != "approved_exposure"
+        str(p)
+        for p in (tmp_path / "registers").glob("*.csv")
+        if p.stem not in ("approved_exposure", "origins")
     ]
     assert main(["validate", *files]) == 0
 

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 @{
     RootModule           = 'TargetZero.psm1'
-    ModuleVersion        = '0.2.0'
+    ModuleVersion        = '0.3.0'
     GUID                 = '033cdb50-d916-42db-8a12-36fac88b3e86'
     Author               = 'Wire Security'
     CompanyName          = 'Wire Security'
@@ -19,6 +19,9 @@
         'Connect-T0M365'
         'Invoke-T0M365AdminInventory'
         'Get-T0M365Domain'
+        'Set-T0M365RoleAssignment'
+        'New-T0M365BreakGlassAccount'
+        'New-T0M365AdminCaPolicy'
     )
     CmdletsToExport      = @()
     VariablesToExport    = @()

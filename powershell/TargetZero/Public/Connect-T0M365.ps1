@@ -5,6 +5,8 @@ function Connect-T0M365 {
         Signs in to Microsoft Graph with the read-only permissions the inventory needs.
     .DESCRIPTION
         Interactive by default: sign in with an account that holds Global Reader.
+        -ReadWrite adds the permissions for the change commands. It always signs in interactively,
+        so changes are made by a person, never by the unattended app.
         For unattended runs set m365.client_id and m365.certificate_thumbprint in targetzero.yaml
         (app registration with certificate and the same permissions as application permissions).
     .EXAMPLE
@@ -13,7 +15,9 @@ function Connect-T0M365 {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][PSTypeName('TargetZero.Config')]$Config
+        [Parameter(Mandatory)][PSTypeName('TargetZero.Config')]$Config,
+        # Also request the permissions the change commands need. Interactive sign-in only.
+        [switch]$ReadWrite
     )
     if (-not (Get-Command Connect-MgGraph -ErrorAction SilentlyContinue)) {
         throw 'Microsoft Graph PowerShell is not installed: Install-Module Microsoft.Graph.Authentication -Scope CurrentUser'
@@ -27,6 +31,15 @@ function Connect-T0M365 {
         'Application.Read.All'
         'Domain.Read.All'
     )
+    if ($ReadWrite) {
+        $scopes += @(
+            'RoleManagement.ReadWrite.Directory'
+            'AppRoleAssignment.ReadWrite.All'
+            'Policy.ReadWrite.ConditionalAccess'
+            'User.ReadWrite.All'
+            'Group.ReadWrite.All'
+        )
+    }
     $settings = $Config.Data['m365']
     $tenant = if ($settings) { $settings['tenant_id'] } else { '' }
     $clientId = if ($settings) { $settings['client_id'] } else { '' }
@@ -34,7 +47,7 @@ function Connect-T0M365 {
 
     $parameters = @{ NoWelcome = $true }
     if ($tenant) { $parameters['TenantId'] = $tenant }
-    if ($clientId -and $thumbprint) {
+    if ($clientId -and $thumbprint -and -not $ReadWrite) {
         $parameters['ClientId'] = $clientId
         $parameters['CertificateThumbprint'] = $thumbprint
     }

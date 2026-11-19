@@ -81,7 +81,21 @@ targetzero external kev                                  # known exploited vulne
 targetzero scorecard
 ```
 
-Each script writes to `output/<today>/` and prints its count. Details: [Microsoft 365](setup-m365.md), [Google Workspace](setup-gws.md), [external checks](external.md), [vendor collectors](vendors.md). Check hand-filled registers with `targetzero validate registers/*.csv`.
+Each script writes to `output/<today>/` and prints its count.
+
+Days 6 to 10 (fixes). Every change command is a dry run until you add `-Apply` / `--apply`, and writes a rollback plan:
+
+```powershell
+Connect-T0M365 -Config $config -ReadWrite
+New-T0M365BreakGlassAccount -Config $config -Apply
+Set-T0M365RoleAssignment -Config $config -PlanPath output/<date>/1_m365_role-plan.csv -Apply
+New-T0M365AdminCaPolicy -Config $config -Apply            # report-only first, -Enable later
+```
+
+```bash
+targetzero gws apply output/<date>/1_gws_role-plan.csv --apply
+targetzero external waf && targetzero external dangling-dns && targetzero external enrich
+``` Details: [Microsoft 365](setup-m365.md), [Google Workspace](setup-gws.md), [external checks](external.md), [vendor collectors](vendors.md). Check hand-filled registers with `targetzero validate registers/*.csv`.
 
 ## 5. Record exceptions
 

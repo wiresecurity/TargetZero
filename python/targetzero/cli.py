@@ -116,7 +116,7 @@ def cmd_registers(args: argparse.Namespace) -> int:
 
 
 def cmd_external(args: argparse.Namespace) -> int:
-    from targetzero.external import discover, kev, scan
+    from targetzero.external import dangling, discover, enrich, kev, scan, waf
 
     config = load_config(args.config)
     if args.check == "scan":
@@ -141,15 +141,49 @@ def cmd_external(args: argparse.Namespace) -> int:
             file, _, origin = spec.partition(":")
             zones.append((Path(file), origin or None))
         paths = discover.run(config, args.date, use_crtsh=not args.no_crtsh, zone_files=zones)
+    elif args.check == "waf":
+        paths = waf.run(config, args.date, test_origins=args.authorised)
+    elif args.check == "enrich":
+        paths = enrich.run(config, args.date)
+    elif args.check == "dangling-dns":
+        paths = dangling.run(config, args.date)
     else:
         paths = kev.run(config, args.date, use_nvd=not args.no_nvd, recent_days=args.recent_days)
     return _print_paths(paths)
 
 
+def _confirm(question: str) -> bool:
+    try:
+        return input(f"{question} Type yes to continue: ").strip().lower() == "yes"
+    except EOFError:
+        return False
+
+
+def _print_results(results: list[dict[str, str]], paths: list[Path]) -> int:
+    for r in results:
+        print(
+            f"{r['status']:<8} {r.get('plan_id', ''):<6} {r['account']:<40} {r['action']:<20} "
+            f"{r['detail']}"
+        )
+    print("\nLog:\n  " + "\n  ".join(str(p) for p in paths))
+    return 1 if any(r["status"] == "failed" for r in results) else 0
+
+
 def cmd_gws(args: argparse.Namespace) -> int:
-    from targetzero.gws import admins, client, domains
+    from targetzero.gws import admins, changes, client, domains
 
     config = load_config(args.config)
+    if args.check == "apply":
+        if args.apply and not args.yes and not _confirm(f"Apply the actions in {args.plan}?"):
+            print("Nothing changed.")
+            return 1
+        gws = client.connect(
+            config, scopes=client.WRITE_SCOPES if args.apply else client.READ_SCOPES
+        )
+        results, paths = changes.apply_plan(
+            config, gws, Path(args.plan), args.date, apply=args.apply
+        )
+        return _print_results(results, paths)
     gws = client.connect(config)
     if args.check == "admins":
         return _print_paths(admins.run(config, args.date, gws, days=args.days))
@@ -157,12 +191,35 @@ def cmd_gws(args: argparse.Namespace) -> int:
 
 
 def cmd_vendors(args: argparse.Namespace) -> int:
-    from targetzero.vendors import common, fortigate, panos
+    from targetzero.vendors import cisco_asa, common, fortigate, panos, redfish, vsphere
 
-    collectors = {"fortigate": fortigate.collect, "panos": panos.collect}
     config = load_config(args.config)
     break_glass = set(config.break_glass(args.vendor))
-    devices = [collectors[args.vendor](Path(f), break_glass) for f in args.files]
+    offline = {"fortigate": fortigate.collect, "panos": panos.collect, "asa": cisco_asa.collect}
+    if args.vendor in offline:
+        devices = [offline[args.vendor](Path(f), break_glass) for f in args.files]
+    elif args.vendor == "redfish":
+        context = redfish.ssl_context(args.ca_bundle, args.insecure)
+        user, password = redfish.credentials()
+        devices = [
+            redfish.collect(redfish.Redfish(h, user, password, context), h, break_glass)
+            for h in args.host
+        ]
+    else:
+        from pyVim.connect import Disconnect
+
+        context = redfish.ssl_context(args.ca_bundle, args.insecure)
+        devices = []
+        for host in args.host:
+            instance = vsphere.connect(host, context)
+            try:
+                devices.append(
+                    vsphere.collect(
+                        instance.RetrieveContent(), host, break_glass, mfa_via_idp=args.mfa_via_idp
+                    )
+                )
+            finally:
+                Disconnect(instance)
     return _print_paths(
         common.write_outputs(
             config,
@@ -235,6 +292,22 @@ def build_parser() -> argparse.ArgumentParser:
         default=30,
         help="without a version, report KEV entries this recent (default 30)",
     )
+    p = ext_sub.add_parser(
+        "waf", parents=[common], help="web names behind a WAF/CDN, origins closed (Zero 4)"
+    )
+    p.add_argument(
+        "--authorised",
+        action="store_true",
+        help="also test origins in registers/origins.csv (must be in scope)",
+    )
+    ext_sub.add_parser(
+        "enrich", parents=[common], help="suggest product, version and support status (Zero 5)"
+    )
+    ext_sub.add_parser(
+        "dangling-dns",
+        parents=[common],
+        help="DNS records pointing to unclaimed resources (Zero 5)",
+    )
     ext.set_defaults(func=cmd_external)
 
     g = sub.add_parser("gws", help="Google Workspace checks")
@@ -242,6 +315,12 @@ def build_parser() -> argparse.ArgumentParser:
     p = g_sub.add_parser("admins", parents=[common], help="admins and MFA (Zero 1, 2)")
     p.add_argument("--days", type=int, default=30, help="sign-in history to read (default 30)")
     g_sub.add_parser("domains", parents=[common], help="domains, for discovery (Zero 5)")
+    p = g_sub.add_parser(
+        "apply", parents=[common], help="apply a reviewed role plan (dry run unless --apply)"
+    )
+    p.add_argument("plan", help="1_gws_role-plan.csv with the action column filled in")
+    p.add_argument("--apply", action="store_true", help="make the changes")
+    p.add_argument("--yes", action="store_true", help="do not ask for confirmation")
     g.set_defaults(func=cmd_gws)
 
     v = sub.add_parser("vendors", help="firewall and VPN collectors (offline config files)")
@@ -249,9 +328,24 @@ def build_parser() -> argparse.ArgumentParser:
     for name, label in (
         ("fortigate", "FortiGate .conf backups"),
         ("panos", "PAN-OS running-config.xml files"),
+        ("asa", "Cisco ASA running-config text files"),
     ):
         p = v_sub.add_parser(name, parents=[common], help=label)
         p.add_argument("files", nargs="+", help="all devices of this vendor, in one run")
+    for name, label in (
+        ("redfish", "iDRAC, iLO and other Redfish management cards (live, read-only)"),
+        ("vsphere", "vCenter or ESXi (live, read-only; needs targetzero[vsphere])"),
+    ):
+        p = v_sub.add_parser(name, parents=[common], help=label)
+        p.add_argument("--host", action="append", required=True, help="repeat for more hosts")
+        p.add_argument("--ca-bundle", help="CA file for self-signed management certificates")
+        p.add_argument("--insecure", action="store_true", help="do not verify certificates")
+        if name == "vsphere":
+            p.add_argument(
+                "--mfa-via-idp",
+                action="store_true",
+                help="your identity source enforces MFA for these admins",
+            )
     v.set_defaults(func=cmd_vendors)
 
     p = sub.add_parser("validate", help="check summaries or register CSVs against the schemas")

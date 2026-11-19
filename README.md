@@ -14,7 +14,7 @@ Tooling for **Target 0**: seven security counts, each brought to zero within 15 
 
 TargetZero counts each one from live data, helps you fix what it finds on Microsoft 365 and Google Workspace, and fills in the scorecard. It is built for small IT teams: no SIEM, no extra licences, CSV and JSON output.
 
-> **Status: 0.2 (baseline).** Everything needed for the Day 1 numbers: admin and MFA inventories for Microsoft 365 and Google Workspace, FortiGate and PAN-OS config collectors, the external exposure scan, asset discovery and the known-exploited-vulnerability check. Change scripts follow in 0.3. See [CHANGELOG.md](CHANGELOG.md).
+> **Status: 0.3 (remediate).** Day 1 inventories plus the changes for days 6 to 10: reduce admin rights, break-glass accounts and Conditional Access on Microsoft 365, role and org unit changes on Google Workspace, WAF/CDN, dangling-DNS and enrichment checks, and collectors for Cisco ASA, iDRAC/iLO and vSphere. See [CHANGELOG.md](CHANGELOG.md).
 
 ## How it works
 
@@ -46,14 +46,15 @@ targetzero scorecard              # builds the scorecard from today's results
 
 See [docs/quickstart.md](docs/quickstart.md) for the full walk-through.
 
-## What it checks (0.2)
+## What it checks and changes (0.3)
 
 | Zero | Microsoft 365 (PowerShell) | Google Workspace (Python) | Devices and internet (Python) |
 | --- | --- | --- | --- |
-| 1, 2 | `Invoke-T0M365AdminInventory` | `targetzero gws admins` | `targetzero vendors fortigate\|panos FILE...`, `targetzero registers manual-admins` |
+| 1, 2 | `Invoke-T0M365AdminInventory` | `targetzero gws admins` | `targetzero vendors fortigate\|panos\|asa FILE...`, `vendors redfish\|vsphere --host`, `registers manual-admins` |
+| 1, 2 changes | `Set-T0M365RoleAssignment`, `New-T0M365BreakGlassAccount`, `New-T0M365AdminCaPolicy` | `targetzero gws apply PLAN` | |
 | 3 | | | `registers/alert_tests.csv` (by hand) |
-| 4 | | | `targetzero external scan --authorised`, vendor collectors |
-| 5 | `Get-T0M365Domain` | `targetzero gws domains` | `targetzero external discover`, `targetzero registers inventory` |
+| 4 | | | `targetzero external scan --authorised`, `external waf`, vendor collectors |
+| 5 | `Get-T0M365Domain` | `targetzero gws domains` | `targetzero external discover`, `external enrich`, `external dangling-dns`, `registers inventory` |
 | 6 | | | `targetzero external kev`, `targetzero registers findings` |
 | 7 | | | `registers/recovery/` (by hand) |
 

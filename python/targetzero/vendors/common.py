@@ -32,6 +32,8 @@ class Device:
     admins: list[dict[str, str]] = field(default_factory=list)
     exposure: list[dict[str, str]] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    # False for collectors that cannot see interface exposure (it is then left to the scan).
+    checks_exposure: bool = True
 
 
 def write_outputs(
@@ -51,20 +53,21 @@ def write_outputs(
     )
     exposure = [e for d in devices for e in d.exposure]
     record_file = f"4_{source}_mgmt-exposure.csv"
-    paths.append(write_csv(directory / record_file, exposure, EXPOSURE_FIELDS))
-    paths.append(
-        write_summary(
-            directory,
-            zero=4,
-            source=source,
-            name="mgmt-exposure",
-            tool=tool,
-            run_date=run_date,
-            items=[{"id": e["id"], "reason": e["reason"]} for e in exposure],
-            notes=all_notes,
-            record_file=record_file,
+    if any(d.checks_exposure for d in devices):
+        paths.append(write_csv(directory / record_file, exposure, EXPOSURE_FIELDS))
+        paths.append(
+            write_summary(
+                directory,
+                zero=4,
+                source=source,
+                name="mgmt-exposure",
+                tool=tool,
+                run_date=run_date,
+                items=[{"id": e["id"], "reason": e["reason"]} for e in exposure],
+                notes=all_notes,
+                record_file=record_file,
+            )
         )
-    )
     devices_rows = [
         {
             "id": f"device:{source}/{d.system.lower()}",

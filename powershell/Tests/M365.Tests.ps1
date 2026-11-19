@@ -128,10 +128,10 @@ break_glass:
                 }
                 'roleManagement/directory/roleAssignments*' {
                     return @(
-                        @{ roleDefinitionId = $ga; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.user'; id = 'jane' } }
-                        @{ roleDefinitionId = $ga; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.user'; id = 'bg' } }
-                        @{ roleDefinitionId = $ga; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.group'; id = 'g1'; displayName = 'Tier0 Admins' } }
-                        @{ roleDefinitionId = $reader; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.servicePrincipal'; id = 'sp1'; displayName = 'Sync App' } }
+                        @{ id = 'a1'; roleDefinitionId = $ga; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.user'; id = 'jane' } }
+                        @{ id = 'a2'; roleDefinitionId = $ga; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.user'; id = 'bg' } }
+                        @{ id = 'a3'; roleDefinitionId = $ga; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.group'; id = 'g1'; displayName = 'Tier0 Admins' } }
+                        @{ id = 'a4'; roleDefinitionId = $reader; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.servicePrincipal'; id = 'sp1'; displayName = 'Sync App' } }
                     )
                 }
                 'groups/g1/transitiveMembers*' { return @(@{ id = 'bob' }) }
@@ -149,8 +149,8 @@ break_glass:
                 'servicePrincipals(appId=*' { return @{ id = 'graph'; appRoles = @(@{ id = 'r-dir'; value = 'Directory.ReadWrite.All' }, @{ id = 'r-read'; value = 'User.Read.All' }) } }
                 'servicePrincipals/graph/appRoleAssignedTo' {
                     return @(
-                        @{ principalDisplayName = 'Backup App'; appRoleId = 'r-dir' }
-                        @{ principalDisplayName = 'Report App'; appRoleId = 'r-read' }
+                        @{ id = 'ara1'; principalId = 'sp-backup'; resourceId = 'graph'; principalDisplayName = 'Backup App'; appRoleId = 'r-dir' }
+                        @{ id = 'ara2'; principalId = 'sp-report'; resourceId = 'graph'; principalDisplayName = 'Report App'; appRoleId = 'r-read' }
                     )
                 }
                 default { throw "Unexpected Graph call: $Uri" }
@@ -163,8 +163,17 @@ break_glass:
         $script:zero2 = Get-Content (Join-Path $dir '2_m365_mfa.summary.json') -Raw | ConvertFrom-Json
     }
 
-    It 'writes the three files' {
-        $paths | ForEach-Object { Split-Path -Leaf $_ } | Should -Be @('1_m365_admins.csv', '1_m365_admins.summary.json', '2_m365_mfa.summary.json')
+    It 'writes the role plan and the three admin files' {
+        $paths | ForEach-Object { Split-Path -Leaf $_ } | Should -Be @('1_m365_role-plan.csv', '1_m365_admins.csv', '1_m365_admins.summary.json', '2_m365_mfa.summary.json')
+    }
+
+    It 'writes one plan row per stored assignment, groups not expanded' {
+        $plan = Import-Csv (Join-Path $dir '1_m365_role-plan.csv')
+        $plan.account | Should -Be @('Jane@contoso.onmicrosoft.com'.ToLower(), 'bg@contoso.onmicrosoft.com', 'Tier0 Admins (group)', 'Sync App (app)', 'Backup App (app)')
+        ($plan | Where-Object account -EQ 'bg@contoso.onmicrosoft.com').break_glass | Should -Be 'Y'
+        ($plan | Where-Object kind -EQ 'app-permission').app_role_id | Should -Be 'r-dir'
+        $plan.action | ForEach-Object { $_ | Should -BeNullOrEmpty }
+        $plan[0].plan_id | Should -Be 'P0001'
     }
 
     It 'expands group members and lists apps with risky permissions only' {
