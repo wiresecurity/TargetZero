@@ -25,7 +25,7 @@ function Export-T0Record {
     }
     else {
         $Records | Select-Object -Property $Property |
-            Export-Csv -LiteralPath $path -NoTypeInformation -Encoding utf8NoBOM -UseQuotes AsNeeded
+            Export-Csv -LiteralPath $path -Encoding utf8NoBOM -UseQuotes AsNeeded
     }
     return $path
 }

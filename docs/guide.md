@@ -229,7 +229,7 @@ Keep the PowerShell module and the Python package on the same version (`py -m ta
 
 ## 5. Create your working folder (once)
 
-Your results go into a **working folder** of their own. Keep it out of shared or synced folders that more people can read than need to.
+Your results go into a **working folder** of their own, on your own computer. Do not put it in OneDrive, SharePoint, Dropbox or Google Drive: the results list your admins and weak spots, and synced folders copy them to the cloud and to other devices.
 
 1. Create the folder, for example `C:\Target0\Acme` (Mac: `Target0/Acme` in your home folder). Use one folder per organisation.
 2. In a terminal, go to it and let TargetZero set it up:
@@ -670,6 +670,7 @@ Targets 3 and 7 are partly manual: keep `registers\alert_tests.csv` (the monthly
 | `Security Defaults is on` | See the warning in 9.4. Do not switch Security Defaults off on your own. |
 | `running scripts is disabled on this system` | Windows only: run the `Set-ExecutionPolicy` command in 4.3. |
 | `The term 'Invoke-T0M365AdminInventory' is not recognized` | Run `Import-Module TargetZero` first (in PowerShell **7**). If that fails too, install the module (4.5). |
+| `Request_ResourceNotFound` or `Role holder … is not a user that exists` | A role is still assigned to a user that was deleted. Update TargetZero (0.3.3 or newer handles this). The admin list shows the object id: remove that role assignment in Entra ID > Roles and administrators. |
 | `Need admin approval` in the browser | A Global Administrator must sign in once and approve the permissions (7.1). |
 | `Insufficient privileges` / `Forbidden` / HTTP 403 | Your account lacks the role from section 2. |
 | `Google Workspace support is not installed` | Install again with `[gws]` (4.4). |

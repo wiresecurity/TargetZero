@@ -131,7 +131,7 @@ function New-T0M365AdminCaPolicy {
                     }
                     $result.status = 'applied'
                 }
-                catch { $result.status = 'failed'; $result.detail = $_.Exception.Message }
+                catch { $result.status = 'failed'; $result.detail = Get-T0GraphError -ErrorRecord $_ }
             }
             else { $result.status = 'skipped'; $result.detail = 'not confirmed' }
         }

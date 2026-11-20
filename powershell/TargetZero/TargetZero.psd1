@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 @{
     RootModule           = 'TargetZero.psm1'
-    ModuleVersion        = '0.3.2'
+    ModuleVersion        = '0.3.3'
     GUID                 = '033cdb50-d916-42db-8a12-36fac88b3e86'
     Author               = 'Wire Security'
     CompanyName          = 'Wire Security'

@@ -133,9 +133,11 @@ function Set-T0M365RoleAssignment {
             $result.status = 'dry-run'; $result.detail = "would call $description"
         }
         elseif ($PSCmdlet.ShouldProcess("$($row.account) / $($row.role)", $row.action)) {
+            $done = 0
             try {
                 foreach ($call in $calls) {
                     $response = Invoke-T0GraphWrite -Method $call[0] -Uri $call[1] -Body $call[2]
+                    $done++
                     if ($call[0] -eq 'POST' -and $call[1] -like '*/appRoleAssignments') { $row.assignment_id = $response['id'] }
                 }
                 $result.status = 'applied'; $result.detail = $description
@@ -149,7 +151,10 @@ function Set-T0M365RoleAssignment {
                 if ($row.role_definition_id -eq $script:T0GlobalAdminTemplate -and $row.action -in 'remove', 'make-eligible') { $activeGa-- }
             }
             catch {
-                $result.status = 'failed'; $result.detail = $_.Exception.Message
+                $result.status = 'failed'
+                $result.detail = Get-T0GraphError -ErrorRecord $_
+                # make-eligible is two calls: say so when the first one went through.
+                if ($done) { $result.detail = "call $($done + 1) of $(@($calls).Count) failed, earlier calls were applied ($description): $($result.detail)" }
             }
         }
         else {

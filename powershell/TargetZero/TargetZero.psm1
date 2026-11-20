@@ -2,7 +2,7 @@
 Set-StrictMode -Version Latest
 
 $script:ModuleRoot = $PSScriptRoot
-$script:ModuleVersion = '0.3.2'
+$script:ModuleVersion = '0.3.3'
 
 foreach ($folder in 'Private', 'Public') {
     $path = Join-Path $PSScriptRoot $folder

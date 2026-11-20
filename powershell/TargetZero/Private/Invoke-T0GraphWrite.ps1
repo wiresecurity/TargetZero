@@ -18,5 +18,6 @@ function Invoke-T0GraphWrite {
         $parameters['Body'] = ConvertTo-Json -InputObject $Body -Depth 10
         $parameters['ContentType'] = 'application/json'
     }
-    Invoke-MgGraphRequest @parameters
+    # Stop on errors, so a failed change is never reported as applied.
+    Invoke-MgGraphRequest @parameters -ErrorAction Stop
 }

@@ -202,3 +202,122 @@ break_glass:
         $jane.separate_admin_account | Should -Be 'N'
     }
 }
+
+Describe 'Graph errors' {
+    BeforeAll {
+        # CI does not install Microsoft.Graph.Authentication: give Pester a command to mock.
+        if (-not (Get-Command Invoke-MgGraphRequest -ErrorAction SilentlyContinue)) {
+            function global:Invoke-MgGraphRequest {
+                [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Stub, replaced by Mock')]
+                [CmdletBinding()]
+                param($Method, $Uri, $OutputType, $Body, $ContentType)
+            }
+        }
+        $script:notFound = 'GET https://graph.microsoft.com/v1.0/users/x HTTP/2.0 404 Not Found Cache-Control: no-cache {"error":{"code":"Request_ResourceNotFound","message":"Resource ''x'' does not exist.","innerError":{}}}'
+    }
+    AfterAll {
+        Remove-Item function:global:Invoke-MgGraphRequest -ErrorAction SilentlyContinue
+    }
+
+    It 'stop reads and writes instead of continuing with an empty result' {
+        # Invoke-MgGraphRequest reports errors as non-terminating, unless the caller passes -ErrorAction.
+        Mock -ModuleName TargetZero Invoke-MgGraphRequest { Write-Error $notFound -ErrorAction $PesterBoundParameters['ErrorAction'] }
+        InModuleScope TargetZero {
+            { Invoke-T0Graph -Uri 'users/x' } | Should -Throw '*Request_ResourceNotFound*'
+            { Invoke-T0Graph -Uri 'users' -All } | Should -Throw
+            { Invoke-T0GraphWrite -Method DELETE -Uri 'users/x' } | Should -Throw
+        }
+    }
+
+    It 'are shortened to code and message' {
+        Mock -ModuleName TargetZero Invoke-MgGraphRequest { Write-Error $notFound -ErrorAction $PesterBoundParameters['ErrorAction'] }
+        InModuleScope TargetZero {
+            $message = try { Invoke-T0Graph -Uri 'users/x' } catch { Get-T0GraphError -ErrorRecord $_ }
+            $message | Should -Be "Request_ResourceNotFound: Resource 'x' does not exist."
+        }
+    }
+
+    It 'mark a failed role change as failed, without a rollback row' {
+        $folder = Join-Path $TestDrive 'failed-change'
+        $null = New-Item -ItemType Directory -Path $folder
+        Set-Content -LiteralPath (Join-Path $folder 'targetzero.yaml') -Value 'organisation: Contoso'
+        $config = Import-T0Config -Path (Join-Path $folder 'targetzero.yaml')
+        $planPath = Join-Path $folder 'plan.csv'
+        $fields = InModuleScope TargetZero { $script:T0RolePlanFields }
+        $row = [ordered]@{}
+        foreach ($f in $fields) { $row[$f] = '' }
+        $row.plan_id = 'P1'; $row.kind = 'role'; $row.account = 'eve@contoso.onmicrosoft.com'; $row.principal_id = 'eve'
+        $row.role = 'User Administrator'; $row.role_definition_id = 'y'; $row.state = 'active'; $row.assignment_id = 'a9'; $row.action = 'remove'
+        [pscustomobject]$row | Export-Csv -LiteralPath $planPath
+
+        Mock -ModuleName TargetZero Invoke-T0Graph {
+            switch -Wildcard ($Uri) {
+                'subscribedSkus' { return @() }
+                'roleManagement/directory/roleAssignments?*' { return @(@{ id = 'a1' }, @{ id = 'a2' }) }
+                default { throw "Unexpected Graph call: $Uri" }
+            }
+        }
+        Mock -ModuleName TargetZero Invoke-MgGraphRequest { Write-Error ($notFound -replace 'GET', 'DELETE') -ErrorAction $PesterBoundParameters['ErrorAction'] }
+        $out = Set-T0M365RoleAssignment -Config $config -PlanPath $planPath -Apply -Confirm:$false -RunDate ([datetime]'2026-11-20')
+        $out.status | Should -Be 'failed'
+        $out.detail | Should -Be "Request_ResourceNotFound: Resource 'x' does not exist."
+        $rollback = Get-ChildItem (Join-Path $folder 'output' '2026-11-20') -Filter 'rollback_*'
+        if ($rollback) { @(Import-Csv $rollback.FullName) | Should -HaveCount 0 }
+    }
+}
+
+Describe 'Invoke-T0M365AdminInventory with a deleted role holder' {
+    BeforeAll {
+        $configPath = Join-Path $TestDrive 'deleted' 'targetzero.yaml'
+        $null = New-Item -ItemType Directory -Path (Split-Path $configPath) -Force
+        Set-Content -LiteralPath $configPath -Value 'organisation: Contoso'
+        $script:config = Import-T0Config -Path $configPath
+        $script:failWith = 'Request_ResourceNotFound'
+
+        Mock -ModuleName TargetZero Invoke-T0Graph {
+            $ga = '62e90394-69f5-4237-9190-012177145e10'
+            switch -Wildcard ($Uri) {
+                'organization*' { return @{ value = @(@{ id = 't1'; verifiedDomains = @(@{ name = 'contoso.onmicrosoft.com'; isInitial = $true }) }) } }
+                'subscribedSkus' { return @() }
+                'roleManagement/directory/roleDefinitions*' { return @(@{ id = $ga; displayName = 'Global Administrator'; templateId = $ga }) }
+                'roleManagement/directory/roleAssignments*' {
+                    return @(
+                        @{ id = 'a1'; roleDefinitionId = $ga; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.user'; id = 'jane' } }
+                        @{ id = 'a2'; roleDefinitionId = $ga; directoryScopeId = '/'; principal = @{ '@odata.type' = '#microsoft.graph.user'; id = 'f4243ce9-dead' } }
+                    )
+                }
+                'policies/identitySecurityDefaultsEnforcementPolicy' { return @{ isEnabled = $true } }
+                'users/f4243ce9-dead?*' { throw "GET https://graph.microsoft.com/v1.0/$Uri HTTP/2.0 404 Not Found {`"error`":{`"code`":`"$script:failWith`",`"message`":`"Resource 'f4243ce9-dead' does not exist.`"}}" }
+                'users/jane?*' { return @{ id = 'jane'; userPrincipalName = 'jane@contoso.onmicrosoft.com'; accountEnabled = $true; assignedLicenses = @() } }
+                'users/jane/authentication/methods' { return @(@{ '@odata.type' = '#microsoft.graph.fido2AuthenticationMethod' }) }
+                'users/*/authentication/requirements' { return @{ perUserMfaState = 'disabled' } }
+                'servicePrincipals(appId=*' { return @{ id = 'graph'; appRoles = @() } }
+                'servicePrincipals/graph/appRoleAssignedTo' { return @() }
+                default { throw "Unexpected Graph call: $Uri" }
+            }
+        }
+    }
+
+    It 'still counts the assignment, with MFA unknown and a note' {
+        $paths = Invoke-T0M365AdminInventory -Config $config -RunDate ([datetime]'2026-11-20')
+        $dir = Split-Path -Parent $paths[0]
+        $rows = Import-Csv (Join-Path $dir '1_m365_admins.csv')
+        $ghost = $rows | Where-Object account -EQ 'f4243ce9-dead'
+        $ghost.mfa_class | Should -Be 'unknown'
+        $ghost.notes | Should -Match 'user object not found'
+        $zero1 = Get-Content (Join-Path $dir '1_m365_admins.summary.json') -Raw | ConvertFrom-Json
+        $zero1.items.id | Should -Contain 'm365:contoso.onmicrosoft.com/f4243ce9-dead'
+        $zero1.complete | Should -BeTrue
+        ($zero1.notes -join ' | ') | Should -Match 'stale role assignment'
+        $zero2 = Get-Content (Join-Path $dir '2_m365_mfa.summary.json') -Raw | ConvertFrom-Json
+        $zero2.items.id | Should -Contain 'm365:contoso.onmicrosoft.com/f4243ce9-dead'
+        $plan = Import-Csv (Join-Path $dir '1_m365_role-plan.csv')
+        ($plan | Where-Object account -EQ 'f4243ce9-dead').assignment_id | Should -Be 'a2'
+    }
+
+    It 'stops on other errors instead of writing wrong counts' {
+        $script:failWith = 'Authorization_RequestDenied'
+        { Invoke-T0M365AdminInventory -Config $config -RunDate ([datetime]'2026-11-21') } | Should -Throw '*Authorization_RequestDenied*'
+        Join-Path (Split-Path $configPath) 'output' '2026-11-21' '1_m365_admins.summary.json' | Should -Not -Exist
+    }
+}

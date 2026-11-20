@@ -34,7 +34,7 @@ function Save-T0ChangeLog {
     if (-not $DryRun -and $Rollback.Count) {
         $rollbackPath = Join-Path $RunDirectory "rollback_$($Name)_$stamp.csv"
         $Rollback | ForEach-Object { [pscustomobject]$_ } | Select-Object -Property $Property |
-            Export-Csv -LiteralPath $rollbackPath -NoTypeInformation -Encoding utf8NoBOM -UseQuotes AsNeeded
+            Export-Csv -LiteralPath $rollbackPath -Encoding utf8NoBOM -UseQuotes AsNeeded
         $paths += $rollbackPath
     }
     return $paths

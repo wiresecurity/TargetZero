@@ -18,7 +18,7 @@ BeforeAll {
             $row = [ordered]@{}
             foreach ($f in $fields) { $row[$f] = if ($_.Contains($f)) { $_[$f] } else { '' } }
             [pscustomobject]$row
-        } | Export-Csv -LiteralPath $Path -NoTypeInformation
+        } | Export-Csv -LiteralPath $Path
     }
 }
 
@@ -137,7 +137,7 @@ Describe 'New-T0M365AdminCaPolicy' {
         $day = Join-Path $config.OutputDirectory '2026-11-19'
         $null = New-Item -ItemType Directory -Path $day -Force
         @([pscustomobject]@{ account = 'jane@contoso.onmicrosoft.com'; privileged = 'Y'; account_type = 'user'; break_glass = 'N'; mfa_class = 'mfa' }) |
-            Export-Csv (Join-Path $day '1_m365_admins.csv') -NoTypeInformation
+            Export-Csv (Join-Path $day '1_m365_admins.csv')
         { New-T0M365AdminCaPolicy -Config $config -Apply -Enable -Confirm:$false } | Should -Throw '*jane@contoso.onmicrosoft.com*'
         Should -Invoke -ModuleName TargetZero Invoke-T0GraphWrite -Times 0
     }

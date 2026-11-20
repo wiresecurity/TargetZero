@@ -121,7 +121,19 @@ function Invoke-T0M365AdminInventory {
     foreach ($id in $userIds) {
         $select = 'id,userPrincipalName,accountEnabled,onPremisesSyncEnabled,assignedLicenses'
         if ($hasP1) { $select += ',signInActivity' }
-        $user = Invoke-T0Graph -Uri "users/$id`?`$select=$select"
+        try { $user = Invoke-T0Graph -Uri "users/$id`?`$select=$select" }
+        catch {
+            $message = Get-T0GraphError -ErrorRecord $_
+            if ($message -notmatch 'ResourceNotFound') { throw }
+            # The role assignment exists but its user does not, usually a deleted user. It still
+            # counts as an admin entry until the assignment is removed.
+            $notes.Add("Role holder $id is not a user that exists (deleted user or stale role assignment): remove the assignment in Entra ID > Roles and administrators, or with the role plan")
+            $userInfo[$id] = @{
+                Upn = $id; MfaClass = 'unknown'; Enforced = 'unknown'; Separate = ''; BreakGlass = 'N'; LastLogon = ''
+                Detail = @('user object not found: deleted user or stale role assignment')
+            }
+            continue
+        }
         $upn = ([string]$user['userPrincipalName']).ToLowerInvariant()
 
         # Registered methods
@@ -142,7 +154,7 @@ function Invoke-T0M365AdminInventory {
         catch {
             $classes = @()
             $methodsKnown = $false
-            $notes.Add("Could not read methods for $upn`: $($_.Exception.Message)")
+            $notes.Add("Could not read methods for $upn`: $(Get-T0GraphError -ErrorRecord $_)")
         }
 
         # Enforcement
@@ -245,7 +257,7 @@ function Invoke-T0M365AdminInventory {
     }
     catch {
         $complete = $false
-        $notes.Add("Could not read application permissions: $($_.Exception.Message)")
+        $notes.Add("Could not read application permissions: $(Get-T0GraphError -ErrorRecord $_)")
     }
 
     # --- Role plan: one row per assignment as Entra ID stores it (groups not expanded) ----------

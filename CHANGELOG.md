@@ -5,12 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-20
+
 ### Changed
 - The step-by-step guide, README and quickstart install TargetZero from PyPI (`pip install targetzero`).
 - The PowerShell module is on the PowerShell Gallery (0.3.2): the docs install it with `Install-Module TargetZero` instead of the release zip.
 - Step-by-step guide: Mac notes (Apple's Python 3.9, pipx) and matching troubleshooting rows.
 
 ### Fixed
+- Microsoft 365: a failed Graph call no longer lets a command carry on with an empty result. `Invoke-MgGraphRequest` reports errors as non-terminating, so `Invoke-T0M365AdminInventory` could write a row without an account name and a summary marked complete, and a failed change in `Set-T0M365RoleAssignment` or `New-T0M365AdminCaPolicy` could be reported as applied, with a rollback row. All Graph calls now stop on errors.
+- `Invoke-T0M365AdminInventory`: a role assignment whose user no longer exists (a deleted user, a stale assignment) stopped the inventory with a 404 (`Request_ResourceNotFound`). It is now counted with the object id as account and MFA unknown, with a note to remove the assignment.
+- Graph errors in notes and change logs are shortened to code and message, without response headers. A failed `make-eligible` says when its first call was already applied.
+- PowerShell 7.7: no more warnings about the obsolete `-NoTypeInformation` parameter.
 - CI: the module manifest is checked with `Test-ModuleManifest` instead of PSScriptAnalyzer, whose manifest rule crashed intermittently on Windows.
 
 ## [0.3.2] - 2026-11-19
