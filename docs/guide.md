@@ -681,9 +681,11 @@ py -m targetzero vendors vsphere --host vcenter.acme.local
 
 ### 8.4 Everything else: the manual admin list (targets 1, 2)
 
-**What it does:** counts the admins you list by hand, for systems TargetZero cannot read: other firewalls (e.g. SonicWall), VPN, backup software (e.g. Veeam), hypervisors, Exchange role groups, important cloud services.
+**What it does:** counts the admins you list by hand, for systems TargetZero cannot read: on-premises Active Directory, other firewalls (e.g. SonicWall), VPN, backup software (e.g. Veeam), hypervisors, Exchange role groups, important cloud services.
 
-**Rights you need:** none for TargetZero. To collect the information you need to see each system's admin list.
+**Active Directory:** if you have on-premises Windows servers with a domain, list every member of the groups **Domain Admins**, **Enterprise Admins**, **Schema Admins** and **Administrators**, and of **Account Operators**, **Server Operators**, **Backup Operators** and **Print Operators**. Include members of groups nested inside them. Use `system` = your domain name, e.g. `acme.local`. AD has no MFA of its own: use `mfa_class` = `phishing-resistant` only when a smart card is required for the account, otherwise `none`, or `unknown` when another product (e.g. Duo) is supposed to enforce MFA and you have not confirmed it.
+
+**Rights you need:** none for TargetZero. To collect the information you need to see each system's admin list. For Active Directory any normal domain account can read group members, e.g. in *Active Directory Users and Computers*.
 
 **Fill it in:** `registers\manual_admins.csv` in Excel, one row per admin account per system.
 
