@@ -14,17 +14,22 @@ from targetzero.common.schema import validate
 SOURCE = "manual"
 
 
+def with_defaults(row: dict[str, str]) -> dict[str, str]:
+    """Fill in source and id when left empty, as people are told to do."""
+    row["source"] = row.get("source") or SOURCE
+    row["id"] = row.get("id") or record_id(
+        row["source"], row.get("system", ""), row.get("account", ""), row.get("role", "")
+    )
+    return row
+
+
 def run(config: Config, run_date: date) -> list[Path]:
     path = config.registers_dir / "manual_admins.csv"
     rows = read_csv(path) if path.exists() else []
     notes = [] if path.exists() else [f"{path.name} not found: no manual admins counted"]
     records = []
     for n, row in enumerate(rows, start=2):
-        row["source"] = row.get("source") or SOURCE
-        row["id"] = row.get("id") or record_id(
-            row["source"], row.get("system", ""), row.get("account", ""), row.get("role", "")
-        )
-        problems = validate(row, "admins")
+        problems = validate(with_defaults(row), "admins")
         if problems:
             notes.append(f"row {n} skipped: {'; '.join(problems)}")
             continue

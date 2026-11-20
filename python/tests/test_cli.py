@@ -41,6 +41,17 @@ def test_validate_reports_bad_rows(tmp_path: Path) -> None:
     assert main(["validate", str(path)]) == 1
 
 
+def test_validate_fills_manual_admin_ids_like_the_count(tmp_path: Path) -> None:
+    path = tmp_path / "manual_admins.csv"
+    path.write_text(
+        "id,source,system,account,role,privileged,permanent,mfa_class,mfa_enforced,break_glass\n"
+        ",,Veeam backup,administrator,Veeam Administrator,Y,Y,none,N,N\n"
+    )
+    assert main(["validate", str(path)]) == 0
+    path.write_text(path.read_text().replace(",none,", ",nope,"))
+    assert main(["validate", str(path)]) == 1
+
+
 def test_missing_config_exits_2(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("TARGETZERO_CONFIG", raising=False)

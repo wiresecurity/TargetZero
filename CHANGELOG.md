@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-11-20
+
+### Changed
+- `docs/guide.md` rewritten as a step-by-step guide per tool: what it does, rights you need, how to run it, what you get, and what to do with the output. Includes a 15-day plan.
+- New `docs/permissions.md`: the rights each command needs, on the platform, on your computer and on the network.
+
+### Fixed
+- `targetzero validate registers/manual_admins.csv` rejected rows with an empty `id` or `source`, which `registers manual-admins` fills in itself. Both now apply the same defaults.
+
 ## [0.3.3] - 2026-11-20
 
 ### Changed

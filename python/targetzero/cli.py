@@ -67,6 +67,8 @@ def cmd_scorecard(args: argparse.Namespace) -> int:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
+    from targetzero.registers import manual_admins
+
     failed = False
     for name in args.files:
         path = Path(name)
@@ -78,9 +80,13 @@ def cmd_validate(args: argparse.Namespace) -> int:
                 print(f"{path}: cannot tell which schema to use; pass --schema", file=sys.stderr)
                 failed = True
                 continue
+            rows = read_csv(path)
+            if path.stem == "manual_admins":
+                # Checked as `registers manual-admins` reads it: empty id and source are filled in.
+                rows = [manual_admins.with_defaults(row) for row in rows]
             problems = [
                 f"row {n}: {p}"
-                for n, row in enumerate(read_csv(path), start=2)
+                for n, row in enumerate(rows, start=2)
                 for p in validate(row, schema)
             ]
         failed = failed or bool(problems)

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "targetzero"
-version = "0.3.3"
+version = "0.3.4"
 description = "Tooling for the Target 0 campaign: count, fix and report seven security zeros."
 readme = "README.md"
 license = "Apache-2.0"
